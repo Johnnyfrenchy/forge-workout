@@ -237,9 +237,9 @@
   }
 
   /* Safe area for iOS */
-  .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom) + 140px); }
-  /* Extra padding when page has a sticky bottom action bar in addition to the nav */
-  .pb-sticky-action { padding-bottom: calc(env(safe-area-inset-bottom) + 220px); }
+  .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom) + 100px); }
+  /* Extra padding when page has a fixed bottom action bar in addition to the nav */
+  .pb-with-action { padding-bottom: calc(env(safe-area-inset-bottom) + 200px); }
 </style>
 
 </head>
@@ -1599,8 +1599,7 @@ function TodayScreen() {
   const hoursSinceLast = lastSession ? ((Date.now() - new Date(lastSession.date).getTime()) / (60*60*1000)) : null;
 
   return (
-    <>
-    <div className="p-4 max-w-screen-md mx-auto pb-sticky-action">
+    <div className="p-4 max-w-screen-md mx-auto pb-with-action">
       {/* Top metadata strip */}
       <div className="flex items-center justify-between mb-4 font-mono text-[10px] text-[var(--ink-dim)] tracking-widest">
         <div>PROTOCOL / {proposedSession.split.toUpperCase()}</div>
@@ -1672,7 +1671,7 @@ function TodayScreen() {
         </div>
       </div>
 
-      {/* Swap / override panel (inline, above the sticky start button) */}
+      {/* Swap / override panel */}
       <SwapPanel
         currentSplit={proposedSession.split}
         currentKey={proposedSession.sessionKey}
@@ -1680,27 +1679,26 @@ function TodayScreen() {
         onForceSession={(k) => { setForcedSessionKey(k); setRegenNonce(n => n+1); }}
         onReset={resetProposal}
       />
-    </div>
 
-    {/* Sticky start action bar: always visible above the bottom nav */}
-    <div
-      className="fixed left-0 right-0 z-30 border-t border-[var(--line-bright)]"
-      style={{
-        bottom: 'calc(env(safe-area-inset-bottom) + 64px)',
-        background: 'linear-gradient(180deg, rgba(10,10,10,0.85) 0%, var(--bg) 30%)',
-        backdropFilter: 'blur(8px)',
-      }}
-    >
-      <div className="max-w-screen-md mx-auto px-4 py-3">
-        <button
-          onClick={() => startSession(proposedSession)}
-          className="btn btn-primary w-full text-base py-4"
-        >
-          → DÉMARRER LA SÉANCE
-        </button>
+      {/* Fixed bottom action bar - stays visible above bottom nav */}
+      <div
+        className="fixed left-0 right-0 border-t border-[var(--line-bright)]"
+        style={{
+          bottom: 'calc(env(safe-area-inset-bottom) + 64px)',
+          background: 'var(--bg)',
+          zIndex: 25,
+        }}
+      >
+        <div className="max-w-screen-md mx-auto px-4 py-3">
+          <button
+            onClick={() => startSession(proposedSession)}
+            className="btn btn-primary w-full text-base py-4"
+          >
+            → DÉMARRER LA SÉANCE
+          </button>
+        </div>
       </div>
     </div>
-    </>
   );
 }
 
