@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="fr">
 <head>
 <meta charset="UTF-8" />
@@ -6,30 +7,40 @@
 <meta name="theme-color" content="#0a0a0a" />
 
 <!-- PWA: iOS home screen install -->
+
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 <meta name="apple-mobile-web-app-title" content="FORGE" />
 <meta name="mobile-web-app-capable" content="yes" />
 
 <!-- PWA: Android manifest -->
+
 <link rel="manifest" href="manifest.json" />
 
 <!-- Apple touch icon (inlined SVG → data URI, matches app logo) -->
+
 <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgZmlsbD0iIzBhMGEwYSIvPjxwb2x5Z29uIHBvaW50cz0iNDAsNDAgMTQwLDQwIDE0MCwxMDYgMTA2LDE0MCA0MCwxNDAiIGZpbGw9IiNjNmYwNDIiLz48dGV4dCB4PSI1NSIgeT0iMTE0IiBmb250LWZhbWlseT0iVmVyZGFuYSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjYwIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjMDAwIj5GPC90ZXh0Pjwvc3ZnPg==" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgZmlsbD0iIzBhMGEwYSIvPjxwb2x5Z29uIHBvaW50cz0iNDAsNDAgMTQwLDQwIDE0MCwxMDYgMTA2LDE0MCA0MCwxNDAiIGZpbGw9IiNjNmYwNDIiLz48dGV4dCB4PSI1NSIgeT0iMTE0IiBmb250LWZhbWlseT0iVmVyZGFuYSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjYwIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjMDAwIj5GPC90ZXh0Pjwvc3ZnPg==" />
 <title>FORGE / Workout Protocol</title>
 
 <!-- Tailwind + React + Babel -->
+
 <script src="https://cdn.tailwindcss.com"></script>
+
 <script crossorigin src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+
 <script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.24.7/babel.min.js"></script>
 
 <!-- Recharts for stats -->
+
 <script src="https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.min.js"></script>
 
 <!-- Firebase v10 modular SDK via CDN (ES modules) -->
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
@@ -226,8 +237,9 @@
   }
 
   /* Safe area for iOS */
-  .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom) + 100px); }
+  .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom) + 140px); }
 </style>
+
 </head>
 <body class="noise">
 
@@ -271,6 +283,7 @@
 </script>
 
 <!-- App script -->
+
 <script type="text/babel" data-presets="react,env">
 /* =========================================================================
    FORGE — Workout Protocol
@@ -2623,77 +2636,81 @@ function SettingsScreen() {
       {showDebug && (
         <div className="card p-3 mb-4 font-mono text-[10px] overflow-auto">
           <pre className="whitespace-pre-wrap break-all">{JSON.stringify({ settings, sessions: sessions.slice(0, 3) }, null, 2)}</pre>
-        </div>
-      )}
 
-      <div className="text-center font-mono text-[10px] text-[var(--ink-low)] tracking-widest mt-8">
-        FORGE / WORKOUT PROTOCOL / v1.0
-      </div>
+```
     </div>
-  );
+  )}
+
+  <div className="text-center font-mono text-[10px] text-[var(--ink-low)] tracking-widest mt-8">
+    FORGE / WORKOUT PROTOCOL / v1.0
+  </div>
+</div>
+```
+
+);
 }
 
 // ============ APP ROOT ====================================================
 function AppRoot() {
-  const { bootState, tab } = useApp();
+const { bootState, tab } = useApp();
 
-  if (bootState === "loading") return <LoadingScreen />;
-  if (bootState === "needsOnboarding") return <Onboarding />;
+if (bootState === “loading”) return <LoadingScreen />;
+if (bootState === “needsOnboarding”) return <Onboarding />;
 
-  return (
-    <div className="min-h-screen bg-grid">
-      <Header />
-      <main className="relative z-10">
-        {tab === "today"    && <TodayScreen />}
-        {tab === "active"   && <ActiveSessionScreen />}
-        {tab === "history"  && <HistoryScreen />}
-        {tab === "stats"    && <StatsScreen />}
-        {tab === "settings" && <SettingsScreen />}
-      </main>
-      <BottomNav />
-    </div>
-  );
+return (
+<div className="min-h-screen bg-grid">
+<Header />
+<main className="relative z-10">
+{tab === “today”    && <TodayScreen />}
+{tab === “active”   && <ActiveSessionScreen />}
+{tab === “history”  && <HistoryScreen />}
+{tab === “stats”    && <StatsScreen />}
+{tab === “settings” && <SettingsScreen />}
+</main>
+<BottomNav />
+</div>
+);
 }
 
 function App() {
-  return (
-    <AppProvider>
-      <AppRoot />
-    </AppProvider>
-  );
+return (
+<AppProvider>
+<AppRoot />
+</AppProvider>
+);
 }
 
 // ============ MOUNT =======================================================
-const rootEl = document.getElementById("root");
+const rootEl = document.getElementById(“root”);
 const root = ReactDOM.createRoot(rootEl);
 root.render(<App />);
 
 // Register Service Worker for PWA offline/caching (only on HTTPS or localhost)
-if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => {
-        // Check for SW updates on every load
-        reg.update().catch(() => {});
-        // When a new SW takes control, reload once to get fresh assets
-        let refreshing = false;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (refreshing) return;
-          refreshing = true;
-          window.location.reload();
-        });
-      })
-      .catch(err => console.warn('SW register failed:', err));
-  });
+if (‘serviceWorker’ in navigator && (location.protocol === ‘https:’ || location.hostname === ‘localhost’)) {
+window.addEventListener(‘load’, () => {
+navigator.serviceWorker.register(‘sw.js’)
+.then(reg => {
+// Check for SW updates on every load
+reg.update().catch(() => {});
+// When a new SW takes control, reload once to get fresh assets
+let refreshing = false;
+navigator.serviceWorker.addEventListener(‘controllerchange’, () => {
+if (refreshing) return;
+refreshing = true;
+window.location.reload();
+});
+})
+.catch(err => console.warn(‘SW register failed:’, err));
+});
 
-  // Dev/debug escape hatch: append ?nosw to the URL to force unregister
-  if (location.search.includes('nosw')) {
-    navigator.serviceWorker.getRegistrations().then(regs => {
-      regs.forEach(r => r.unregister());
-      caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
-      alert('Service worker unregistered + caches cleared. Reload.');
-    });
-  }
+// Dev/debug escape hatch: append ?nosw to the URL to force unregister
+if (location.search.includes(‘nosw’)) {
+navigator.serviceWorker.getRegistrations().then(regs => {
+regs.forEach(r => r.unregister());
+caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+alert(‘Service worker unregistered + caches cleared. Reload.’);
+});
+}
 }
 </script>
 
