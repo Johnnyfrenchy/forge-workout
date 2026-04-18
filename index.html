@@ -1,0 +1,2664 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0a0a" />
+
+<!-- PWA: iOS home screen install -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="FORGE" />
+<meta name="mobile-web-app-capable" content="yes" />
+
+<!-- PWA: Android manifest -->
+<link rel="manifest" href="manifest.json" />
+
+<!-- Apple touch icon (inlined SVG → data URI, matches app logo) -->
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgZmlsbD0iIzBhMGEwYSIvPjxwb2x5Z29uIHBvaW50cz0iNDAsNDAgMTQwLDQwIDE0MCwxMDYgMTA2LDE0MCA0MCwxNDAiIGZpbGw9IiNjNmYwNDIiLz48dGV4dCB4PSI1NSIgeT0iMTE0IiBmb250LWZhbWlseT0iVmVyZGFuYSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjYwIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjMDAwIj5GPC90ZXh0Pjwvc3ZnPg==" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgZmlsbD0iIzBhMGEwYSIvPjxwb2x5Z29uIHBvaW50cz0iNDAsNDAgMTQwLDQwIDE0MCwxMDYgMTA2LDE0MCA0MCwxNDAiIGZpbGw9IiNjNmYwNDIiLz48dGV4dCB4PSI1NSIgeT0iMTE0IiBmb250LWZhbWlseT0iVmVyZGFuYSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjYwIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjMDAwIj5GPC90ZXh0Pjwvc3ZnPg==" />
+<title>FORGE / Workout Protocol</title>
+
+<!-- Tailwind + React + Babel -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script crossorigin src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.24.7/babel.min.js"></script>
+
+<!-- Recharts for stats -->
+<script src="https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.min.js"></script>
+
+<!-- Firebase v10 modular SDK via CDN (ES modules) -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth, signInAnonymously, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs,
+    query, orderBy, limit, deleteDoc, updateDoc, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  window.firebase = {
+    initializeApp, getAuth, signInAnonymously, onAuthStateChanged,
+    getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs,
+    query, orderBy, limit, deleteDoc, updateDoc, serverTimestamp
+  };
+  // Signal app that Firebase SDK is ready
+  window.dispatchEvent(new CustomEvent('firebase-ready'));
+</script>
+
+<style>
+  /* Typography: JetBrains Mono for body (terminal feel), Space Grotesk banned, we use Archivo Black for display */
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Archivo+Black&family=Archivo:wght@400;500;600;700;900&display=swap');
+
+  :root {
+    --bg: #0a0a0a;
+    --bg-2: #141414;
+    --bg-3: #1c1c1c;
+    --line: #2a2a2a;
+    --line-bright: #3a3a3a;
+    --ink: #e8e8e8;
+    --ink-dim: #8a8a8a;
+    --ink-low: #5a5a5a;
+    --accent: #c6f042;       /* acid lime */
+    --accent-dim: #7a9028;
+    --danger: #ff5252;
+    --warn: #ffaa33;
+    --info: #6ec0ff;
+  }
+
+  html, body, #root { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Archivo', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+  }
+
+  .font-display { font-family: 'Archivo Black', 'Archivo', sans-serif; letter-spacing: -0.02em; }
+  .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* Grid paper background */
+  .bg-grid {
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: -1px -1px;
+  }
+
+  /* Noise overlay */
+  .noise::after {
+    content: '';
+    position: fixed; inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    z-index: 1;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Tick marks */
+  .tick-border {
+    background-image: linear-gradient(90deg, var(--line-bright) 1px, transparent 1px);
+    background-size: 8px 100%;
+    background-repeat: repeat-x;
+  }
+
+  /* Inputs */
+  input[type=number], input[type=text], textarea, select {
+    background: var(--bg-3);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'JetBrains Mono', monospace;
+    transition: border-color 120ms ease;
+  }
+  input[type=number]:focus, input[type=text]:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  input[type=number] { -moz-appearance: textfield; }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+  /* Range slider */
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    background: var(--bg-3);
+    height: 4px; border-radius: 0;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 20px; height: 20px; border-radius: 0;
+    background: var(--accent); cursor: pointer;
+    border: 2px solid var(--bg);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 20px; height: 20px; border-radius: 0;
+    background: var(--accent); cursor: pointer;
+    border: 2px solid var(--bg);
+  }
+
+  /* Buttons base */
+  .btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 12px 16px;
+    border: 1px solid var(--line-bright);
+    background: var(--bg-2);
+    color: var(--ink);
+    transition: all 120ms ease;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn:hover { background: var(--bg-3); border-color: var(--ink-dim); }
+  .btn-primary {
+    background: var(--accent); color: #000; border-color: var(--accent);
+  }
+  .btn-primary:hover { background: #d6ff52; border-color: #d6ff52; }
+  .btn-ghost { background: transparent; border-color: var(--line); }
+  .btn-ghost:hover { border-color: var(--ink-dim); background: var(--bg-2); }
+  .btn-danger { border-color: var(--danger); color: var(--danger); }
+
+  /* Card */
+  .card {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+  }
+  .card-accent {
+    background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg-3) 100%);
+    border: 1px solid var(--line-bright);
+  }
+
+  /* Stripe decoration */
+  .stripes {
+    background-image: repeating-linear-gradient(
+      135deg,
+      var(--line) 0 2px,
+      transparent 2px 8px
+    );
+  }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .anim-fade-up { animation: fadeUp 320ms ease both; }
+
+  @keyframes pulse-accent {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(198, 240, 66, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(198, 240, 66, 0); }
+  }
+  .pulse-accent { animation: pulse-accent 2s ease-in-out infinite; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--line-bright); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--ink-low); }
+
+  /* Checkbox custom */
+  .set-check {
+    width: 28px; height: 28px;
+    border: 1.5px solid var(--line-bright);
+    background: var(--bg-3);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 120ms ease;
+    flex-shrink: 0;
+  }
+  .set-check.done {
+    background: var(--accent); border-color: var(--accent);
+  }
+  .set-check.done::after {
+    content: '✓'; color: #000; font-weight: 900; font-size: 18px;
+  }
+
+  /* Tab active */
+  .tab-active {
+    color: var(--accent) !important;
+    border-top-color: var(--accent) !important;
+  }
+
+  /* Safe area for iOS */
+  .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom) + 72px); }
+</style>
+</head>
+<body class="noise">
+
+<div id="root"></div>
+<div id="boot-error" style="display:none; padding:20px; font-family:monospace; color:#ff5252; font-size:13px; background:#0a0a0a;">
+  <div style="font-weight:bold; margin-bottom:8px; font-size:15px;">BOOT ERROR</div>
+  <div id="boot-error-msg" style="white-space:pre-wrap; word-break:break-word;"></div>
+  <div style="margin-top:16px; padding-top:16px; border-top:1px solid #333; color:#8a8a8a; font-size:11px;">
+    <div id="boot-diag"></div>
+  </div>
+</div>
+
+<script>
+  window._errors = [];
+  window._bootError = (msg) => {
+    const diag = [
+      'React: '         + (typeof React !== 'undefined' ? 'OK v' + React.version : 'MISSING'),
+      'ReactDOM: '      + (typeof ReactDOM !== 'undefined' ? 'OK' : 'MISSING'),
+      'Babel: '         + (typeof Babel !== 'undefined' ? 'OK' : 'MISSING'),
+      'Recharts: '      + (typeof Recharts !== 'undefined' ? 'OK' : 'MISSING'),
+      'Tailwind: '      + (typeof tailwind !== 'undefined' ? 'OK' : 'MISSING'),
+      'Firebase SDK: '  + (window.firebase ? 'OK' : 'not loaded (localStorage mode)'),
+      '',
+      'Errors caught:',
+      ...(window._errors.length ? window._errors : ['(none)'])
+    ].join('\n');
+    document.getElementById('boot-error').style.display = 'block';
+    document.getElementById('boot-error-msg').textContent = msg;
+    document.getElementById('boot-diag').textContent = diag;
+  };
+  window.addEventListener('error', (e) => {
+    const src = e.filename ? e.filename.split('/').pop() : 'inline';
+    window._errors.push(src + ': ' + (e.message || String(e.error)));
+  });
+  setTimeout(() => {
+    const root = document.getElementById('root');
+    if (!root || root.children.length === 0) {
+      window._bootError('App did not mount within 5 seconds.');
+    }
+  }, 5000);
+</script>
+
+<!-- App script -->
+<script type="text/babel" data-presets="react,env">
+/* =========================================================================
+   FORGE — Workout Protocol
+   Single-file React app, Firestore sync + localStorage fallback.
+
+   Architecture:
+   - State: React Context (simple, no external libs)
+   - Persistence: Firestore (if available) + localStorage mirror
+   - Algo: see /algo/ section comments inline
+
+   Priorities (decided):
+   1. Frequency detection (14-day rolling)
+   2. Split generation (Upper/Lower, PPL, FullBody)
+   3. Progressive overload (mixed rules)
+   4. Post-session tracking + Firebase sync
+   5. Charts (volume trend)
+   ========================================================================= */
+
+const { useState, useEffect, useMemo, useCallback, useRef, createContext, useContext } = React;
+const Recharts = window.Recharts || {};
+
+// ============ FIREBASE CONFIG =============================================
+// IMPORTANT: Colle ici ta config Firebase (voir instructions après génération)
+const FIREBASE_CONFIG = {
+  apiKey: "PASTE_API_KEY_HERE",
+  authDomain: "PASTE_AUTH_DOMAIN_HERE",
+  projectId: "PASTE_PROJECT_ID_HERE",
+  storageBucket: "PASTE_STORAGE_BUCKET_HERE",
+  messagingSenderId: "PASTE_SENDER_ID_HERE",
+  appId: "PASTE_APP_ID_HERE",
+};
+const FIREBASE_ENABLED = !FIREBASE_CONFIG.apiKey.startsWith("PASTE_");
+
+// ============ CONSTANTS ===================================================
+
+const STORAGE_KEY = "forge_workout_v1";
+const SPLITS = {
+  UPPER_LOWER: "Upper/Lower",
+  PPL: "PPL",
+  FULL_BODY: "Full Body",
+  MAINTENANCE: "Maintenance",
+};
+
+const MUSCLE_GROUPS = {
+  CHEST: "Chest",
+  BACK: "Back",
+  SHOULDERS: "Shoulders",
+  TRICEPS: "Triceps",
+  BICEPS: "Biceps",
+  QUADS: "Quads",
+  HAMSTRINGS: "Hamstrings",
+  GLUTES: "Glutes",
+  CALVES: "Calves",
+  CORE: "Core",
+};
+
+const SPLIT_GROUPS = {
+  UPPER: ["Chest", "Back", "Shoulders", "Triceps", "Biceps"],
+  LOWER: ["Quads", "Hamstrings", "Glutes", "Calves"],
+  PUSH: ["Chest", "Shoulders", "Triceps"],
+  PULL: ["Back", "Biceps"],
+  LEGS: ["Quads", "Hamstrings", "Glutes", "Calves"],
+  FULL: ["Chest", "Back", "Quads", "Hamstrings", "Shoulders"],
+};
+
+// Session types
+const SESSION_TYPES = {
+  UPPER_HEAVY: { name: "Upper Heavy", split: "Upper/Lower", focus: "upper", style: "heavy" },
+  UPPER_HYPER: { name: "Upper Hyper", split: "Upper/Lower", focus: "upper", style: "hyper" },
+  LOWER_POWER: { name: "Lower Power", split: "Upper/Lower", focus: "lower", style: "heavy" },
+  LOWER_HYPER: { name: "Lower Hyper", split: "Upper/Lower", focus: "lower", style: "hyper" },
+  PUSH_HEAVY:  { name: "Push Heavy",  split: "PPL", focus: "push",  style: "heavy" },
+  PUSH_HYPER:  { name: "Push Hyper",  split: "PPL", focus: "push",  style: "hyper" },
+  PULL_HEAVY:  { name: "Pull Heavy",  split: "PPL", focus: "pull",  style: "heavy" },
+  PULL_HYPER:  { name: "Pull Hyper",  split: "PPL", focus: "pull",  style: "hyper" },
+  LEGS_POWER:  { name: "Legs Power",  split: "PPL", focus: "legs",  style: "heavy" },
+  LEGS_HYPER:  { name: "Legs Hyper",  split: "PPL", focus: "legs",  style: "hyper" },
+  FULL_A:      { name: "Full Body A", split: "Full Body", focus: "full", style: "heavy" },
+  FULL_B:      { name: "Full Body B", split: "Full Body", focus: "full", style: "hyper" },
+};
+
+// ============ EXERCISE LIBRARY ============================================
+/**
+ * Exercises tagged by muscle group, role (compound/iso), tier (primary/secondary/accessory).
+ * Heavy sessions prioritize compound + primary; Hyper sessions mix in isolation + accessory.
+ */
+const EXERCISES = [
+  // Chest
+  { id: "bb_bench",    name: "Barbell Bench Press",     group: "Chest",   role: "compound", tier: "primary" },
+  { id: "db_bench",    name: "Dumbbell Bench Press",    group: "Chest",   role: "compound", tier: "primary" },
+  { id: "incl_db",     name: "Incline DB Press",        group: "Chest",   role: "compound", tier: "secondary" },
+  { id: "dip",         name: "Weighted Dips",           group: "Chest",   role: "compound", tier: "secondary" },
+  { id: "cable_fly",   name: "Cable Fly",               group: "Chest",   role: "isolation", tier: "accessory" },
+  { id: "pec_deck",    name: "Pec Deck",                group: "Chest",   role: "isolation", tier: "accessory" },
+
+  // Back
+  { id: "pullup",      name: "Weighted Pull-up",        group: "Back",    role: "compound", tier: "primary" },
+  { id: "bb_row",      name: "Barbell Row",             group: "Back",    role: "compound", tier: "primary" },
+  { id: "tbar_row",    name: "T-Bar Row",               group: "Back",    role: "compound", tier: "secondary" },
+  { id: "lat_pull",    name: "Lat Pulldown",            group: "Back",    role: "compound", tier: "secondary" },
+  { id: "cable_row",   name: "Cable Seated Row",        group: "Back",    role: "compound", tier: "secondary" },
+  { id: "face_pull",   name: "Face Pull",               group: "Back",    role: "isolation", tier: "accessory" },
+  { id: "pullover",    name: "Cable Pullover",          group: "Back",    role: "isolation", tier: "accessory" },
+
+  // Shoulders
+  { id: "ohp",         name: "Overhead Press",          group: "Shoulders", role: "compound", tier: "primary" },
+  { id: "db_ohp",      name: "Seated DB Press",         group: "Shoulders", role: "compound", tier: "primary" },
+  { id: "lat_raise",   name: "Lateral Raise",           group: "Shoulders", role: "isolation", tier: "secondary" },
+  { id: "cable_lat",   name: "Cable Lateral Raise",     group: "Shoulders", role: "isolation", tier: "accessory" },
+  { id: "rear_delt",   name: "Rear Delt Fly",           group: "Shoulders", role: "isolation", tier: "accessory" },
+
+  // Triceps
+  { id: "close_bench", name: "Close-Grip Bench",        group: "Triceps", role: "compound", tier: "secondary" },
+  { id: "skull",       name: "Skullcrushers",           group: "Triceps", role: "isolation", tier: "secondary" },
+  { id: "tri_push",    name: "Cable Pushdown",          group: "Triceps", role: "isolation", tier: "accessory" },
+  { id: "overhead_ext",name: "Overhead Tricep Ext.",    group: "Triceps", role: "isolation", tier: "accessory" },
+
+  // Biceps
+  { id: "bb_curl",     name: "Barbell Curl",            group: "Biceps",  role: "isolation", tier: "secondary" },
+  { id: "incl_curl",   name: "Incline DB Curl",         group: "Biceps",  role: "isolation", tier: "secondary" },
+  { id: "hammer",      name: "Hammer Curl",             group: "Biceps",  role: "isolation", tier: "accessory" },
+  { id: "cable_curl",  name: "Cable Curl",              group: "Biceps",  role: "isolation", tier: "accessory" },
+
+  // Quads
+  { id: "bb_squat",    name: "Back Squat",              group: "Quads",   role: "compound", tier: "primary" },
+  { id: "front_sq",    name: "Front Squat",             group: "Quads",   role: "compound", tier: "primary" },
+  { id: "hack_sq",     name: "Hack Squat",              group: "Quads",   role: "compound", tier: "secondary" },
+  { id: "leg_press",   name: "Leg Press",               group: "Quads",   role: "compound", tier: "secondary" },
+  { id: "lunge",       name: "Walking Lunge",           group: "Quads",   role: "compound", tier: "secondary" },
+  { id: "leg_ext",     name: "Leg Extension",           group: "Quads",   role: "isolation", tier: "accessory" },
+
+  // Hamstrings
+  { id: "rdl",         name: "Romanian Deadlift",       group: "Hamstrings", role: "compound", tier: "primary" },
+  { id: "sl_rdl",      name: "Single-Leg RDL",          group: "Hamstrings", role: "compound", tier: "secondary" },
+  { id: "leg_curl",    name: "Lying Leg Curl",          group: "Hamstrings", role: "isolation", tier: "secondary" },
+  { id: "seat_curl",   name: "Seated Leg Curl",         group: "Hamstrings", role: "isolation", tier: "accessory" },
+
+  // Glutes
+  { id: "hip_thrust",  name: "Barbell Hip Thrust",      group: "Glutes",  role: "compound", tier: "primary" },
+  { id: "bulg_sq",     name: "Bulgarian Split Squat",   group: "Glutes",  role: "compound", tier: "secondary" },
+  { id: "cable_kick",  name: "Cable Kickback",          group: "Glutes",  role: "isolation", tier: "accessory" },
+  { id: "abd_mach",    name: "Hip Abduction",           group: "Glutes",  role: "isolation", tier: "accessory" },
+
+  // Calves
+  { id: "stand_calf",  name: "Standing Calf Raise",     group: "Calves",  role: "isolation", tier: "secondary" },
+  { id: "seat_calf",   name: "Seated Calf Raise",       group: "Calves",  role: "isolation", tier: "accessory" },
+
+  // Core (abs + lower back stability)
+  { id: "plank",       name: "Plank",                   group: "Core",    role: "isolation", tier: "primary" },
+  { id: "hang_leg",    name: "Hanging Leg Raise",       group: "Core",    role: "isolation", tier: "primary" },
+  { id: "ab_wheel",    name: "Ab Wheel Rollout",        group: "Core",    role: "isolation", tier: "primary" },
+  { id: "cable_crunch",name: "Cable Crunch",            group: "Core",    role: "isolation", tier: "secondary" },
+  { id: "dead_bug",    name: "Dead Bug",                group: "Core",    role: "isolation", tier: "secondary" },
+  { id: "pallof",      name: "Pallof Press",            group: "Core",    role: "isolation", tier: "secondary" },
+  { id: "side_plank",  name: "Side Plank",              group: "Core",    role: "isolation", tier: "accessory" },
+  { id: "russian_t",   name: "Russian Twist",           group: "Core",    role: "isolation", tier: "accessory" },
+  { id: "bird_dog",    name: "Bird Dog",                group: "Core",    role: "isolation", tier: "accessory" },
+];
+
+// ============ ALGO: FREQUENCY DETECTION ===================================
+/**
+ * Compute rolling average sessions per week over the last N days (default 14).
+ * Returns 0 if no data. Used to decide the split.
+ */
+function computeFrequency(sessions, days = 14) {
+  if (!sessions || sessions.length === 0) return 0;
+  const now = Date.now();
+  const cutoff = now - days * 24 * 60 * 60 * 1000;
+  const recent = sessions.filter(s => new Date(s.date).getTime() >= cutoff && s.completed);
+  const weeks = days / 7;
+  return recent.length / weeks;
+}
+
+/**
+ * Pick the active split based on frequency.
+ * Bootstrap: if history < 14 days, use user's seed target.
+ */
+function pickSplit(sessions, seedTarget, settings) {
+  const oldestSession = sessions.reduce((acc, s) => {
+    const t = new Date(s.date).getTime();
+    return (!acc || t < acc) ? t : acc;
+  }, null);
+  const historyDays = oldestSession ? (Date.now() - oldestSession) / (24*60*60*1000) : 0;
+
+  let effectiveFreq;
+  if (historyDays < 14 && seedTarget) {
+    effectiveFreq = seedTarget;
+  } else {
+    effectiveFreq = computeFrequency(sessions, 14);
+  }
+
+  if (effectiveFreq >= 3.5) return SPLITS.UPPER_LOWER;
+  if (effectiveFreq >= 2.5) return SPLITS.PPL;
+  if (effectiveFreq >= 1.5) return SPLITS.FULL_BODY;
+  return SPLITS.MAINTENANCE;
+}
+
+// ============ ALGO: SESSION PICKER ========================================
+/**
+ * Find hours since a muscle group was last trained.
+ * Returns Infinity if never trained.
+ */
+function hoursSinceGroupTrained(sessions, group) {
+  const completed = sessions.filter(s => s.completed);
+  let mostRecent = 0;
+  for (const s of completed) {
+    if ((s.muscleGroups || []).includes(group)) {
+      const t = new Date(s.date).getTime();
+      if (t > mostRecent) mostRecent = t;
+    }
+  }
+  if (mostRecent === 0) return Infinity;
+  return (Date.now() - mostRecent) / (60 * 60 * 1000);
+}
+
+/**
+ * Count how many times each group was trained in the last 30 days.
+ */
+function groupFrequencyMap(sessions, days = 30) {
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+  const map = {};
+  for (const g of Object.values(MUSCLE_GROUPS)) map[g] = 0;
+  for (const s of sessions) {
+    if (!s.completed) continue;
+    if (new Date(s.date).getTime() < cutoff) continue;
+    for (const g of (s.muscleGroups || [])) {
+      map[g] = (map[g] || 0) + 1;
+    }
+  }
+  return map;
+}
+
+/**
+ * Pick the next session type given the current split and recent history.
+ * Rules:
+ * - Respect 48h rest per group
+ * - Alternate Heavy / Hyper within the same focus
+ * - Prefer focus areas that are under-trained this month
+ */
+function pickNextSessionType(sessions, split) {
+  const completed = sessions.filter(s => s.completed).sort((a,b) => new Date(b.date) - new Date(a.date));
+  const last = completed[0];
+  const lastStyle = last?.type || null;
+  const lastFocus = last ? deriveFocus(last) : null;
+
+  // Candidate session types for this split
+  const candidates = Object.entries(SESSION_TYPES)
+    .filter(([_, v]) => v.split === split)
+    .map(([k, v]) => ({ key: k, ...v }));
+
+  // Score each candidate
+  const freqMap = groupFrequencyMap(sessions, 30);
+  const scored = candidates.map(c => {
+    const groups = groupsForFocus(c.focus);
+    // 48h rest constraint
+    const minHours = Math.min(...groups.map(g => hoursSinceGroupTrained(sessions, g)));
+    const restOK = minHours >= 48;
+
+    // Avg monthly frequency of this focus's groups
+    const avgFreq = groups.reduce((sum, g) => sum + (freqMap[g] || 0), 0) / groups.length;
+
+    // Alternate heavy/hyper within same focus
+    const alternationBonus = (lastFocus === c.focus && lastStyle === c.style) ? -10 : 5;
+
+    // Prefer different focus than last
+    const focusBonus = (lastFocus === c.focus) ? -5 : 10;
+
+    let score = 0;
+    if (!restOK) score -= 1000;
+    score -= avgFreq * 2;  // lower freq => higher priority
+    score += alternationBonus;
+    score += focusBonus;
+
+    return { ...c, score, restOK, avgFreq };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+
+  // If best candidate is still rest-blocked, fall back to best even with partial rest
+  return scored[0];
+}
+
+function deriveFocus(session) {
+  const groups = session.muscleGroups || [];
+  if (groups.some(g => SPLIT_GROUPS.LOWER.includes(g))) {
+    if (groups.some(g => SPLIT_GROUPS.UPPER.includes(g))) return "full";
+    return "lower";
+  }
+  if (groups.some(g => SPLIT_GROUPS.PUSH.includes(g)) && !groups.some(g => SPLIT_GROUPS.PULL.includes(g))) return "push";
+  if (groups.some(g => SPLIT_GROUPS.PULL.includes(g)) && !groups.some(g => SPLIT_GROUPS.PUSH.includes(g))) return "pull";
+  return "upper";
+}
+
+function groupsForFocus(focus) {
+  switch (focus) {
+    case "upper": return SPLIT_GROUPS.UPPER;
+    case "lower": return SPLIT_GROUPS.LOWER;
+    case "push":  return SPLIT_GROUPS.PUSH;
+    case "pull":  return SPLIT_GROUPS.PULL;
+    case "legs":  return SPLIT_GROUPS.LEGS;
+    case "full":  return SPLIT_GROUPS.FULL;
+    default: return [];
+  }
+}
+
+// ============ ALGO: EXERCISE SELECTION + PROGRESSION ======================
+/**
+ * Build exercise list for a session given focus + style.
+ * Heavy: 1 compound primary (or best available) per group + 1 secondary on main groups. 4x5-6.
+ * Hyper: 1 secondary + 1 accessory per group. 3x8-12 or 3x10-15.
+ * Guarantees at least 1 exercise per targeted group.
+ */
+function buildExercises(focus, style, sessions) {
+  const groups = groupsForFocus(focus);
+  const result = [];
+
+  // Groups that get a bonus "second" exercise in heavy sessions
+  const mainGroupsByFocus = {
+    upper: ["Chest", "Back", "Shoulders"],
+    lower: ["Quads", "Hamstrings", "Glutes"],
+    push:  ["Chest", "Shoulders"],
+    pull:  ["Back"],
+    legs:  ["Quads", "Hamstrings", "Glutes"],
+    full:  ["Chest", "Back", "Quads"],
+  };
+  const mainGroups = mainGroupsByFocus[focus] || [];
+
+  for (const group of groups) {
+    const pool = EXERCISES.filter(e => e.group === group);
+    if (pool.length === 0) continue;
+
+    if (style === "heavy") {
+      // Pick best available: primary > secondary > accessory (fallback for small-muscle groups)
+      const byTier = (t) => pool.filter(e => e.tier === t);
+      let first = pickRotating(byTier("primary"), group, sessions, "primary")
+               || pickRotating(byTier("secondary"), group, sessions, "secondary")
+               || pickRotating(byTier("accessory"), group, sessions, "accessory");
+      if (first) result.push(buildExerciseEntry(first, style, sessions, focus));
+
+      // Add a secondary exo for main muscle groups
+      if (mainGroups.includes(group)) {
+        // Try to pick something different from "first"
+        const candidates = [
+          ...byTier("secondary").filter(e => e.id !== first?.id),
+          ...byTier("accessory").filter(e => e.id !== first?.id),
+        ];
+        if (candidates.length > 0) {
+          const second = pickRotating(candidates, group, sessions, "secondary");
+          if (second) result.push(buildExerciseEntry(second, style, sessions, focus));
+        }
+      }
+    } else {
+      // hyper: mix of secondary + accessory, or 2 accessories if no secondary
+      const byTier = (t) => pool.filter(e => e.tier === t);
+      const secondary = pickRotating(byTier("secondary"), group, sessions, "secondary");
+      const accessory = pickRotating(byTier("accessory"), group, sessions, "accessory");
+
+      if (secondary) result.push(buildExerciseEntry(secondary, style, sessions, focus));
+      if (accessory && accessory.id !== secondary?.id) {
+        result.push(buildExerciseEntry(accessory, style, sessions, focus));
+      }
+      // Fallback if neither (small groups like calves with only 2 total exos)
+      if (!secondary && !accessory) {
+        const primary = pickRotating(byTier("primary"), group, sessions, "primary");
+        if (primary) result.push(buildExerciseEntry(primary, style, sessions, focus));
+      }
+    }
+  }
+
+  // Cap at reasonable number based on focus scope
+  const maxExos = focus === "full" ? 8 : (focus === "lower" || focus === "legs") ? 7 : 8;
+  const capped = result.slice(0, maxExos);
+
+  // Core finisher: 1 core exercise at the end of every session (rotated).
+  // Style-aware: heavy sessions get a stability/primary core, hyper get an isolation.
+  const corePool = EXERCISES.filter(e => e.group === "Core");
+  const coreTier = style === "heavy" ? "primary" : "secondary";
+  const coreEx = pickRotating(
+    corePool.filter(e => e.tier === coreTier),
+    "Core",
+    sessions,
+    coreTier
+  ) || corePool[0];
+  if (coreEx) {
+    capped.push(buildExerciseEntry(coreEx, "hyper", sessions, focus));
+  }
+
+  return capped;
+}
+
+/**
+ * Rotate through available exercises in a pool, avoiding the most recent choice.
+ */
+function pickRotating(pool, group, sessions, tier) {
+  if (pool.length === 0) return null;
+  if (pool.length === 1) return pool[0];
+  // Find last exercise used for this group+tier
+  const recentSessions = sessions.filter(s => s.completed).slice(-5);
+  const recentIds = new Set();
+  for (const s of recentSessions) {
+    for (const ex of (s.exercises || [])) {
+      const def = EXERCISES.find(e => e.id === ex.id);
+      if (def && def.group === group && def.tier === tier) {
+        recentIds.add(ex.id);
+      }
+    }
+  }
+  const unused = pool.filter(e => !recentIds.has(e.id));
+  if (unused.length > 0) return unused[0];
+  return pool[0];
+}
+
+function buildExerciseEntry(exerciseDef, style, sessions, focus) {
+  // Find last time this exercise was done
+  const lastLog = findLastExerciseLog(sessions, exerciseDef.id);
+
+  // Prescribe sets/reps based on style + tier
+  let sets, repsTarget, restSeconds, rpeTarget, repUnit;
+
+  // Core exercises: plank-style in seconds, others in reps
+  if (exerciseDef.group === "Core") {
+    const timedIsos = ["plank", "side_plank", "dead_bug", "bird_dog", "pallof"];
+    if (timedIsos.includes(exerciseDef.id)) {
+      sets = 3;
+      repsTarget = exerciseDef.id === "plank" ? "30-60" : "20-40";
+      restSeconds = 45;
+      rpeTarget = 8;
+      repUnit = "sec";
+    } else {
+      sets = 3;
+      repsTarget = "10-15";
+      restSeconds = 60;
+      rpeTarget = 8;
+      repUnit = "reps";
+    }
+  } else if (style === "heavy") {
+    if (exerciseDef.tier === "primary") {
+      sets = 4; repsTarget = "5-6"; restSeconds = 180; rpeTarget = 8.5;
+    } else {
+      sets = 4; repsTarget = "6-8"; restSeconds = 150; rpeTarget = 8;
+    }
+    repUnit = "reps";
+  } else {
+    if (exerciseDef.tier === "secondary") {
+      sets = 3; repsTarget = "8-12"; restSeconds = 90; rpeTarget = 8;
+    } else {
+      sets = 3; repsTarget = focus === "lower" || focus === "legs" ? "10-15" : "10-12"; restSeconds = 60; rpeTarget = 7.5;
+    }
+    repUnit = "reps";
+  }
+
+  // Progressive overload decision
+  const progression = computeProgression(lastLog, repsTarget, sets);
+
+  return {
+    id: exerciseDef.id,
+    name: exerciseDef.name,
+    group: exerciseDef.group,
+    role: exerciseDef.role,
+    tier: exerciseDef.tier,
+    sets,
+    repsTarget,
+    repUnit,
+    restSeconds,
+    rpeTarget,
+    suggestedWeight: progression.suggestedWeight,
+    progressionNote: progression.note,
+    lastSession: lastLog ? {
+      weight: lastLog.weight,
+      reps: lastLog.reps,
+      rpe: lastLog.rpe,
+    } : null,
+    notes: "",
+  };
+}
+
+function findLastExerciseLog(sessions, exerciseId) {
+  const completed = sessions.filter(s => s.completed).sort((a,b) => new Date(b.date) - new Date(a.date));
+  for (const s of completed) {
+    const ex = (s.loggedExercises || []).find(e => e.id === exerciseId);
+    if (ex) return ex;
+  }
+  return null;
+}
+
+/**
+ * Progressive overload logic (mixed):
+ * 1) If last 2-3 sessions had RPE <= 8 AND all reps hit target upper bound => +weight
+ * 2) If reps are in range but not at top => same weight, +1 rep target
+ * 3) If RPE > 8.5 or reps below target => hold
+ * 4) After long absence (>3 days) => hold, focus reps
+ */
+function computeProgression(lastLog, repsTarget, sets) {
+  if (!lastLog) {
+    return { suggestedWeight: null, note: "Première fois — choisis charge technique" };
+  }
+  const [low, high] = repsTarget.split("-").map(Number);
+  const reps = lastLog.reps || [];
+  const allHitHigh = reps.length > 0 && reps.every(r => r >= high);
+  const avgRpe = lastLog.rpe || 7;
+
+  const weightIncrement = lastLog.weight >= 60 ? 2.5 : 1.25;
+
+  if (allHitHigh && avgRpe <= 8) {
+    return {
+      suggestedWeight: lastLog.weight + weightIncrement,
+      note: `+${weightIncrement}kg (top du range atteint, RPE OK)`,
+    };
+  }
+  if (avgRpe > 8.5) {
+    return {
+      suggestedWeight: lastLog.weight,
+      note: "Hold charge (RPE élevé dernière séance)",
+    };
+  }
+  return {
+    suggestedWeight: lastLog.weight,
+    note: "Hold charge, vise +1 rep cette séance",
+  };
+}
+
+// ============ ALGO: DELOAD DETECTION ======================================
+/**
+ * Detect if a deload is needed. Adaptive: fire if 3 consecutive weeks
+ * of high volume without a reduced-volume week.
+ */
+function shouldProposeDeload(sessions, settings) {
+  if (!settings.adaptiveDeload) return false;
+  const byWeek = groupSessionsByWeek(sessions);
+  const weeks = Object.values(byWeek).slice(-4);
+  if (weeks.length < 3) return false;
+  const avgVolume = weeks.slice(0, -1).reduce((sum, w) => sum + weekVolume(w), 0) / Math.max(1, weeks.length - 1);
+  const highVolumeWeeks = weeks.slice(-3).filter(w => weekVolume(w) >= avgVolume * 0.9);
+  return highVolumeWeeks.length >= 3;
+}
+
+function weekVolume(weekSessions) {
+  return weekSessions.reduce((sum, s) => {
+    const exs = s.loggedExercises || [];
+    return sum + exs.reduce((a, e) => a + (e.reps || []).reduce((x, r) => x + r, 0) * (e.weight || 0), 0);
+  }, 0);
+}
+
+function groupSessionsByWeek(sessions) {
+  const map = {};
+  for (const s of sessions) {
+    if (!s.completed) continue;
+    const d = new Date(s.date);
+    const year = d.getFullYear();
+    const week = getWeekNumber(d);
+    const key = `${year}-W${week}`;
+    (map[key] = map[key] || []).push(s);
+  }
+  return map;
+}
+
+function getWeekNumber(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
+// ============ ALGO: RECOVERY CHECK ========================================
+/**
+ * Days since last session; if > 3, trigger recovery prompt.
+ */
+function daysSinceLastSession(sessions) {
+  const completed = sessions.filter(s => s.completed);
+  if (completed.length === 0) return Infinity;
+  const last = completed.reduce((acc, s) => {
+    const t = new Date(s.date).getTime();
+    return t > acc ? t : acc;
+  }, 0);
+  return (Date.now() - last) / (24 * 60 * 60 * 1000);
+}
+
+function applyRecoveryAdjustment(exercises, recoveryStatus) {
+  // good: no change | medium: -20% volume | poor: -30% volume
+  if (recoveryStatus === "good") return exercises;
+  const volMultiplier = recoveryStatus === "medium" ? 0.8 : 0.7;
+  return exercises.map(ex => ({
+    ...ex,
+    sets: Math.max(2, Math.round(ex.sets * volMultiplier)),
+    recoveryAdjusted: true,
+  }));
+}
+
+function applyDeloadAdjustment(exercises) {
+  return exercises.map(ex => ({
+    ...ex,
+    sets: Math.max(2, Math.round(ex.sets * 0.6)),
+    deloadAdjusted: true,
+    suggestedWeight: ex.suggestedWeight ? Math.round(ex.suggestedWeight * 0.8 / 2.5) * 2.5 : null,
+  }));
+}
+
+// ============ SESSION BUILDER (MAIN ENTRY) ================================
+/**
+ * Build the next recommended session based on all history.
+ */
+function buildNextSession(sessions, settings, overrides = {}) {
+  const split = overrides.split || pickSplit(sessions, settings.weeklyTarget, settings);
+  if (split === SPLITS.MAINTENANCE) {
+    return {
+      type: "maintenance",
+      name: "Maintenance / Light",
+      split,
+      muscleGroups: [],
+      exercises: [],
+      note: "Fréquence <2/sem — reprends doucement. Pas de séance imposée.",
+    };
+  }
+
+  const picked = pickNextSessionType(sessions, split);
+  if (!picked) {
+    return {
+      type: "rest",
+      name: "Repos",
+      split,
+      muscleGroups: [],
+      exercises: [],
+      note: "Tous les groupes sont en récupération (<48h). Repos recommandé.",
+    };
+  }
+
+  let exercises = buildExercises(picked.focus, picked.style, sessions);
+
+  const recovery = overrides.recovery || "good";
+  if (daysSinceLastSession(sessions) > 3 && recovery !== "good") {
+    exercises = applyRecoveryAdjustment(exercises, recovery);
+  }
+
+  if (overrides.deload || shouldProposeDeload(sessions, settings) && overrides.acceptDeload) {
+    exercises = applyDeloadAdjustment(exercises);
+  }
+
+  const muscleGroups = [...new Set(exercises.map(e => e.group))];
+  const plannedVolume = exercises.reduce((sum, e) => sum + e.sets, 0);
+
+  return {
+    id: `${new Date().toISOString().slice(0,10)}_${picked.key}`,
+    date: new Date().toISOString(),
+    type: picked.name,
+    sessionKey: picked.key,
+    split,
+    focus: picked.focus,
+    style: picked.style,
+    muscleGroups,
+    plannedVolume,
+    exercises,
+    completed: false,
+    restOK: picked.restOK,
+    note: picked.restOK ? null : "⚠ Certains groupes <48h de récup, propose reste ou alternative",
+  };
+}
+
+// ============ STORAGE LAYER ===============================================
+/**
+ * Dual-storage: Firestore as source of truth, localStorage mirror.
+ * Falls back to localStorage-only if Firebase unavailable.
+ */
+class Store {
+  constructor() {
+    this.uid = null;
+    this.fs = null;
+    this.ready = false;
+    this.firebaseReady = false;
+    this._readyWaiters = [];
+  }
+
+  async init() {
+    // Always load localStorage first (instant)
+    this._localCache = this._readLocal();
+
+    if (!FIREBASE_ENABLED) {
+      this.ready = true;
+      this._firebaseOn = false;
+      return;
+    }
+
+    try {
+      await this._waitForFirebase();
+      const app = window.firebase.initializeApp(FIREBASE_CONFIG);
+      const auth = window.firebase.getAuth(app);
+      this.fs = window.firebase.getFirestore(app);
+
+      await new Promise((res, rej) => {
+        window.firebase.onAuthStateChanged(auth, (user) => {
+          if (user) { this.uid = user.uid; res(); }
+        });
+        window.firebase.signInAnonymously(auth).catch(rej);
+      });
+
+      this._firebaseOn = true;
+      this.ready = true;
+    } catch (e) {
+      console.warn("Firebase init failed, using localStorage only:", e);
+      this._firebaseOn = false;
+      this.ready = true;
+    }
+  }
+
+  _waitForFirebase() {
+    return new Promise(res => {
+      if (window.firebase) return res();
+      window.addEventListener('firebase-ready', () => res(), { once: true });
+      setTimeout(res, 2000); // safety fallback — don't block UI
+    });
+  }
+
+  _readLocal() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : { sessions: [], settings: null, currentSession: null };
+    } catch {
+      return { sessions: [], settings: null, currentSession: null };
+    }
+  }
+
+  _writeLocal(data) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) { console.warn(e); }
+  }
+
+  async loadAll() {
+    const local = this._readLocal();
+    if (!this._firebaseOn) return local;
+    try {
+      const userDoc = window.firebase.doc(this.fs, `users/${this.uid}`);
+      const snap = await window.firebase.getDoc(userDoc);
+      const settings = snap.exists() ? snap.data().settings : null;
+
+      const sessionsCol = window.firebase.collection(this.fs, `users/${this.uid}/sessions`);
+      const q = window.firebase.query(sessionsCol, window.firebase.orderBy("date", "desc"), window.firebase.limit(500));
+      const sessSnap = await window.firebase.getDocs(q);
+      const sessions = [];
+      sessSnap.forEach(d => sessions.push({ ...d.data(), _docId: d.id }));
+
+      const currentDoc = window.firebase.doc(this.fs, `users/${this.uid}/state/current`);
+      const curSnap = await window.firebase.getDoc(currentDoc);
+      const currentSession = curSnap.exists() ? curSnap.data() : null;
+
+      const merged = { sessions, settings: settings || local.settings, currentSession };
+      this._writeLocal(merged);
+      return merged;
+    } catch (e) {
+      console.warn("Firestore load failed, using local:", e);
+      return local;
+    }
+  }
+
+  async saveSettings(settings) {
+    const local = this._readLocal();
+    local.settings = settings;
+    this._writeLocal(local);
+    if (!this._firebaseOn) return;
+    try {
+      const userDoc = window.firebase.doc(this.fs, `users/${this.uid}`);
+      await window.firebase.setDoc(userDoc, { settings }, { merge: true });
+    } catch (e) { console.warn(e); }
+  }
+
+  async saveSession(session) {
+    const local = this._readLocal();
+    const existingIdx = local.sessions.findIndex(s => s.id === session.id);
+    if (existingIdx >= 0) local.sessions[existingIdx] = session;
+    else local.sessions.unshift(session);
+    this._writeLocal(local);
+    if (!this._firebaseOn) return;
+    try {
+      const sessionsCol = window.firebase.collection(this.fs, `users/${this.uid}/sessions`);
+      const docRef = window.firebase.doc(sessionsCol, session.id);
+      await window.firebase.setDoc(docRef, session);
+    } catch (e) { console.warn(e); }
+  }
+
+  async deleteSession(sessionId) {
+    const local = this._readLocal();
+    local.sessions = local.sessions.filter(s => s.id !== sessionId);
+    this._writeLocal(local);
+    if (!this._firebaseOn) return;
+    try {
+      const docRef = window.firebase.doc(this.fs, `users/${this.uid}/sessions/${sessionId}`);
+      await window.firebase.deleteDoc(docRef);
+    } catch (e) { console.warn(e); }
+  }
+
+  async saveCurrentSession(session) {
+    const local = this._readLocal();
+    local.currentSession = session;
+    this._writeLocal(local);
+    if (!this._firebaseOn) return;
+    try {
+      const docRef = window.firebase.doc(this.fs, `users/${this.uid}/state/current`);
+      await window.firebase.setDoc(docRef, session || {});
+    } catch (e) { console.warn(e); }
+  }
+
+  async clearCurrentSession() {
+    const local = this._readLocal();
+    local.currentSession = null;
+    this._writeLocal(local);
+    if (!this._firebaseOn) return;
+    try {
+      const docRef = window.firebase.doc(this.fs, `users/${this.uid}/state/current`);
+      await window.firebase.deleteDoc(docRef);
+    } catch (e) { console.warn(e); }
+  }
+
+  isFirebase() { return this._firebaseOn; }
+  getUid() { return this.uid; }
+}
+
+const store = new Store();
+
+// ============ CONTEXT =====================================================
+const AppContext = createContext(null);
+
+function AppProvider({ children }) {
+  const [bootState, setBootState] = useState("loading"); // loading | needsOnboarding | ready
+  const [sessions, setSessions] = useState([]);
+  const [settings, setSettings] = useState(null);
+  const [currentSession, setCurrentSession] = useState(null);
+  const [tab, setTab] = useState("today");
+
+  useEffect(() => {
+    (async () => {
+      await store.init();
+      const data = await store.loadAll();
+      setSessions(data.sessions || []);
+      setCurrentSession(data.currentSession || null);
+      if (!data.settings) {
+        setBootState("needsOnboarding");
+      } else {
+        setSettings(data.settings);
+        setBootState("ready");
+      }
+    })();
+  }, []);
+
+  const completeOnboarding = useCallback(async (newSettings) => {
+    await store.saveSettings(newSettings);
+    setSettings(newSettings);
+    setBootState("ready");
+  }, []);
+
+  const updateSettings = useCallback(async (patch) => {
+    const next = { ...settings, ...patch };
+    setSettings(next);
+    await store.saveSettings(next);
+  }, [settings]);
+
+  const startSession = useCallback(async (session) => {
+    setCurrentSession(session);
+    await store.saveCurrentSession(session);
+    setTab("active");
+  }, []);
+
+  const updateCurrentSession = useCallback(async (updater) => {
+    const next = typeof updater === "function" ? updater(currentSession) : updater;
+    setCurrentSession(next);
+    await store.saveCurrentSession(next);
+  }, [currentSession]);
+
+  const finishSession = useCallback(async (finalSession) => {
+    const completed = { ...finalSession, completed: true, completedAt: new Date().toISOString() };
+    await store.saveSession(completed);
+    await store.clearCurrentSession();
+    setSessions(prev => {
+      const idx = prev.findIndex(s => s.id === completed.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = completed;
+        return copy;
+      }
+      return [completed, ...prev];
+    });
+    setCurrentSession(null);
+    setTab("today");
+  }, []);
+
+  const discardCurrentSession = useCallback(async () => {
+    await store.clearCurrentSession();
+    setCurrentSession(null);
+    setTab("today");
+  }, []);
+
+  const deleteSession = useCallback(async (id) => {
+    await store.deleteSession(id);
+    setSessions(prev => prev.filter(s => s.id !== id));
+  }, []);
+
+  const value = useMemo(() => ({
+    bootState, sessions, settings, currentSession, tab, setTab,
+    completeOnboarding, updateSettings,
+    startSession, updateCurrentSession, finishSession, discardCurrentSession,
+    deleteSession,
+    isFirebase: store.isFirebase(),
+  }), [bootState, sessions, settings, currentSession, tab,
+      completeOnboarding, updateSettings, startSession, updateCurrentSession,
+      finishSession, discardCurrentSession, deleteSession]);
+
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+}
+
+const useApp = () => useContext(AppContext);
+
+// ============ UI: SHARED COMPONENTS =======================================
+function Logo({ small }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="relative">
+        <div className={`${small ? "w-6 h-6" : "w-8 h-8"} bg-[var(--accent)]`} style={{clipPath: "polygon(0 0, 100% 0, 100% 70%, 70% 100%, 0 100%)"}} />
+        <div className={`absolute inset-0 ${small ? "w-6 h-6" : "w-8 h-8"} flex items-center justify-center font-display text-black text-[10px]`}>F</div>
+      </div>
+      <div className={`font-display ${small ? "text-lg" : "text-xl"} tracking-tight`}>FORGE</div>
+    </div>
+  );
+}
+
+function StatusBar() {
+  const { sessions, isFirebase } = useApp();
+  const freq = computeFrequency(sessions, 14);
+  return (
+    <div className="font-mono text-[10px] text-[var(--ink-dim)] flex items-center gap-3 flex-wrap">
+      <span className="flex items-center gap-1">
+        <span className={`w-1.5 h-1.5 ${isFirebase ? "bg-[var(--accent)]" : "bg-[var(--warn)]"}`}></span>
+        {isFirebase ? "SYNC" : "LOCAL"}
+      </span>
+      <span>FREQ {freq.toFixed(1)}/WK</span>
+      <span>SESS {sessions.filter(s => s.completed).length}</span>
+    </div>
+  );
+}
+
+function Header() {
+  return (
+    <header className="border-b border-[var(--line)] bg-[var(--bg)] sticky top-0 z-20 relative">
+      <div className="max-w-screen-md mx-auto px-4 py-3 flex items-center justify-between">
+        <Logo />
+        <StatusBar />
+      </div>
+    </header>
+  );
+}
+
+function BottomNav() {
+  const { tab, setTab, currentSession } = useApp();
+  const tabs = [
+    { id: "today", label: "TODAY", letter: "T" },
+    { id: "active", label: "LIVE", letter: "L", badge: currentSession ? true : false },
+    { id: "history", label: "HIST", letter: "H" },
+    { id: "stats", label: "STAT", letter: "S" },
+    { id: "settings", label: "CFG", letter: "C" },
+  ];
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-30 bg-[var(--bg-2)] border-t border-[var(--line-bright)]">
+      <div className="max-w-screen-md mx-auto flex">
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`flex-1 py-3 border-t-2 ${tab === t.id ? 'tab-active' : 'border-transparent text-[var(--ink-dim)]'} relative`}
+          >
+            <div className="font-display text-sm">{t.letter}</div>
+            <div className="font-mono text-[9px] mt-0.5 tracking-widest">{t.label}</div>
+            {t.badge && <span className="absolute top-1.5 right-1/3 w-1.5 h-1.5 bg-[var(--accent)] pulse-accent"></span>}
+          </button>
+        ))}
+      </div>
+      <div style={{ height: 'env(safe-area-inset-bottom)' }}></div>
+    </nav>
+  );
+}
+
+function ConfirmModal({ title, body, confirmLabel = "CONFIRMER", cancelLabel = "ANNULER", onConfirm, onCancel, danger = true }) {
+  // Prevent body scroll while open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.75)' }}
+      onClick={onCancel}
+    >
+      <div
+        className="w-full max-w-md card-accent anim-fade-up m-4 sm:m-0"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="p-5">
+          <div className={`font-mono text-[10px] tracking-widest mb-2 ${danger ? 'text-[var(--danger)]' : 'text-[var(--accent)]'}`}>
+            ! CONFIRMATION
+          </div>
+          <div className="font-display text-xl leading-tight">{title}</div>
+          {body && (
+            <div className="text-xs text-[var(--ink-dim)] mt-3 leading-relaxed">{body}</div>
+          )}
+          <div className="mt-5 flex gap-2">
+            <button onClick={onCancel} className="btn btn-ghost flex-1">{cancelLabel}</button>
+            <button
+              onClick={onConfirm}
+              className={`btn flex-1 ${danger ? 'btn-danger' : 'btn-primary'}`}
+              style={danger ? {background: 'var(--danger)', color: '#000', borderColor: 'var(--danger)'} : {}}
+            >
+              {confirmLabel}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-grid">
+      <div className="anim-fade-up text-center">
+        <Logo />
+        <div className="mt-4 font-mono text-xs text-[var(--ink-dim)] tracking-widest">LOADING PROTOCOL...</div>
+      </div>
+    </div>
+  );
+}
+
+// ============ ONBOARDING ==================================================
+function Onboarding() {
+  const { completeOnboarding } = useApp();
+  const [step, setStep] = useState(0);
+  const [data, setData] = useState({
+    name: "",
+    weeklyTarget: 4,
+    adaptiveDeload: true,
+    strictRest: true,
+  });
+
+  const next = () => setStep(s => s + 1);
+  const finish = () => completeOnboarding({
+    ...data,
+    createdAt: new Date().toISOString(),
+  });
+
+  return (
+    <div className="min-h-screen bg-[var(--bg)] flex flex-col">
+      <div className="flex-1 flex flex-col justify-center px-6 py-8 max-w-md mx-auto w-full">
+        <div className="anim-fade-up">
+          <Logo />
+          <div className="mt-1 font-mono text-[10px] text-[var(--ink-dim)] tracking-widest">WORKOUT PROTOCOL / v1</div>
+        </div>
+
+        <div className="mt-10 anim-fade-up">
+          {step === 0 && (
+            <>
+              <div className="font-mono text-[10px] text-[var(--accent)] tracking-widest mb-3">STEP 01 / 03</div>
+              <h1 className="font-display text-4xl leading-tight">Protocole<br/>d'entraînement<br/>automatique.</h1>
+              <p className="mt-6 text-[var(--ink-dim)] text-sm leading-relaxed">
+                Détection de fréquence, progression automatique, tracking par série.<br/>
+                Zéro padding. Mathématiquement cohérent.
+              </p>
+              <div className="mt-10">
+                <button onClick={next} className="btn btn-primary w-full">→ COMMENCER</button>
+              </div>
+            </>
+          )}
+          {step === 1 && (
+            <>
+              <div className="font-mono text-[10px] text-[var(--accent)] tracking-widest mb-3">STEP 02 / 03</div>
+              <h1 className="font-display text-3xl leading-tight">Ton objectif<br/>hebdomadaire.</h1>
+              <p className="mt-3 text-[var(--ink-dim)] text-sm">Combien de séances vises-tu par semaine ? (sert de seed pendant les 14 premiers jours)</p>
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                {[2, 3, 4, 5].map(n => (
+                  <button
+                    key={n}
+                    onClick={() => setData(d => ({ ...d, weeklyTarget: n }))}
+                    className={`p-5 border ${data.weeklyTarget === n ? 'border-[var(--accent)] bg-[var(--bg-2)]' : 'border-[var(--line)] bg-[var(--bg-2)]'}`}
+                  >
+                    <div className="font-display text-3xl">{n}</div>
+                    <div className="font-mono text-[10px] text-[var(--ink-dim)] mt-1 tracking-widest">
+                      {n === 2 ? 'FULL BODY' : n === 3 ? 'PPL' : 'UPPER/LOWER'}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <div className="mt-8 flex gap-2">
+                <button onClick={() => setStep(0)} className="btn btn-ghost flex-1">← RETOUR</button>
+                <button onClick={next} className="btn btn-primary flex-1">SUIVANT →</button>
+              </div>
+            </>
+          )}
+          {step === 2 && (
+            <>
+              <div className="font-mono text-[10px] text-[var(--accent)] tracking-widest mb-3">STEP 03 / 03</div>
+              <h1 className="font-display text-3xl leading-tight">Règles<br/>du protocole.</h1>
+              <div className="mt-6 space-y-3">
+                <label className="flex items-start gap-3 p-4 card cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={data.adaptiveDeload}
+                    onChange={e => setData(d => ({ ...d, adaptiveDeload: e.target.checked }))}
+                    className="mt-1 accent-[var(--accent)] w-4 h-4"
+                  />
+                  <div className="flex-1">
+                    <div className="font-display">Deload adaptative</div>
+                    <div className="font-mono text-[11px] text-[var(--ink-dim)] mt-1">
+                      Propose un deload après 3 semaines consécutives à volume élevé (vs calendrier fixe).
+                    </div>
+                  </div>
+                </label>
+                <label className="flex items-start gap-3 p-4 card cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={data.strictRest}
+                    onChange={e => setData(d => ({ ...d, strictRest: e.target.checked }))}
+                    className="mt-1 accent-[var(--accent)] w-4 h-4"
+                  />
+                  <div className="flex-1">
+                    <div className="font-display">Repos 48h strict</div>
+                    <div className="font-mono text-[11px] text-[var(--ink-dim)] mt-1">
+                      Refuse de proposer un groupe musculaire trop récent (&lt; 48h).
+                    </div>
+                  </div>
+                </label>
+              </div>
+              <div className="mt-8 flex gap-2">
+                <button onClick={() => setStep(1)} className="btn btn-ghost flex-1">← RETOUR</button>
+                <button onClick={finish} className="btn btn-primary flex-1">→ FORGE</button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============ TODAY (HOME) ================================================
+function TodayScreen() {
+  const { sessions, settings, currentSession, startSession, setTab, discardCurrentSession } = useApp();
+  const [recovery, setRecovery] = useState(null);
+  const [needsRecoveryPrompt, setNeedsRecoveryPrompt] = useState(false);
+  const [useDeload, setUseDeload] = useState(false);
+  const [deloadAvailable, setDeloadAvailable] = useState(false);
+  const [forcedSplit, setForcedSplit] = useState(null);       // override the auto-picked split
+  const [forcedSessionKey, setForcedSessionKey] = useState(null); // override the auto-picked session
+  const [regenNonce, setRegenNonce] = useState(0);             // bump to force re-compute
+  const [showAbandonModal, setShowAbandonModal] = useState(false);
+
+  useEffect(() => {
+    const days = daysSinceLastSession(sessions);
+    if (days > 3 && days < 999) setNeedsRecoveryPrompt(true);
+    else setRecovery("good");
+
+    setDeloadAvailable(shouldProposeDeload(sessions, settings));
+  }, [sessions, settings]);
+
+  const proposedSession = useMemo(() => {
+    if (!recovery && needsRecoveryPrompt) return null;
+    const base = buildNextSession(sessions, settings, {
+      recovery: recovery || "good",
+      deload: useDeload,
+      acceptDeload: useDeload,
+      split: forcedSplit,
+    });
+
+    // If user manually picked a specific session type, rebuild with that
+    if (forcedSessionKey && SESSION_TYPES[forcedSessionKey]) {
+      const t = SESSION_TYPES[forcedSessionKey];
+      let exs = buildExercises(t.focus, t.style, sessions);
+      if (daysSinceLastSession(sessions) > 3 && recovery !== "good" && recovery) {
+        exs = applyRecoveryAdjustment(exs, recovery);
+      }
+      if (useDeload) exs = applyDeloadAdjustment(exs);
+      const muscleGroups = [...new Set(exs.map(e => e.group))];
+      return {
+        ...base,
+        id: `${new Date().toISOString().slice(0,10)}_${forcedSessionKey}_${regenNonce}`,
+        type: t.name,
+        sessionKey: forcedSessionKey,
+        split: t.split,
+        focus: t.focus,
+        style: t.style,
+        muscleGroups,
+        plannedVolume: exs.reduce((s, e) => s + e.sets, 0),
+        exercises: exs,
+        note: null,
+        restOK: true,
+      };
+    }
+    return base;
+  }, [sessions, settings, recovery, needsRecoveryPrompt, useDeload, forcedSplit, forcedSessionKey, regenNonce]);
+
+  // Reset helper: wipe all session-related local state
+  const resetProposal = () => {
+    setRecovery(null);
+    setNeedsRecoveryPrompt(false);
+    setUseDeload(false);
+    setForcedSplit(null);
+    setForcedSessionKey(null);
+    setRegenNonce(n => n + 1);
+    // Re-run the recovery check
+    const days = daysSinceLastSession(sessions);
+    if (days > 3 && days < 999) setNeedsRecoveryPrompt(true);
+    else setRecovery("good");
+  };
+
+  if (currentSession) {
+    return (
+      <div className="p-4 max-w-screen-md mx-auto">
+        <div className="card p-5 anim-fade-up border-[var(--accent)]">
+          <div className="font-mono text-[10px] text-[var(--accent)] tracking-widest">SESSION ACTIVE</div>
+          <div className="font-display text-2xl mt-2">{currentSession.type}</div>
+          <div className="font-mono text-xs text-[var(--ink-dim)] mt-1">
+            En cours — {currentSession.exercises?.filter(e => e.logged).length || 0}/{currentSession.exercises?.length || 0} exos loggés
+          </div>
+          <button onClick={() => setTab("active")} className="btn btn-primary w-full mt-4">
+            → REPRENDRE LA SÉANCE
+          </button>
+          <button
+            onClick={() => setShowAbandonModal(true)}
+            className="btn btn-ghost w-full mt-2 text-[10px] btn-danger"
+          >
+            ✕ ABANDONNER LA SÉANCE
+          </button>
+        </div>
+        {showAbandonModal && (
+          <ConfirmModal
+            title="Abandonner la séance ?"
+            body="Rien ne sera enregistré dans l'historique. Tu pourras générer une nouvelle séance ou en choisir une autre manuellement."
+            confirmLabel="ABANDONNER"
+            onConfirm={async () => {
+              setShowAbandonModal(false);
+              await discardCurrentSession();
+            }}
+            onCancel={() => setShowAbandonModal(false)}
+          />
+        )}
+      </div>
+    );
+  }
+
+  if (needsRecoveryPrompt && !recovery) {
+    return (
+      <div className="p-4 max-w-screen-md mx-auto">
+        <div className="card p-6 anim-fade-up">
+          <div className="font-mono text-[10px] text-[var(--warn)] tracking-widest">PAUSE DÉTECTÉE</div>
+          <div className="font-display text-2xl mt-2 leading-tight">
+            {Math.round(daysSinceLastSession(sessions))} jours depuis la dernière séance.
+          </div>
+          <div className="text-sm text-[var(--ink-dim)] mt-2">Comment va la récup ?</div>
+
+          <div className="mt-5 space-y-2">
+            {[
+              { key: "good",   label: "Impeccable",  sub: "Aucune réduction de volume", color: "var(--accent)" },
+              { key: "medium", label: "Bof",         sub: "Volume -20%, accessoires allégés", color: "var(--warn)" },
+              { key: "poor",   label: "Pas ouf",     sub: "Volume -30%, focus technique",     color: "var(--danger)" },
+            ].map(o => (
+              <button
+                key={o.key}
+                onClick={() => { setRecovery(o.key); setNeedsRecoveryPrompt(false); }}
+                className="w-full p-4 card text-left hover:border-[var(--ink-dim)] transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-display text-lg">{o.label}</div>
+                    <div className="font-mono text-[11px] text-[var(--ink-dim)] mt-0.5">{o.sub}</div>
+                  </div>
+                  <div className="w-2 h-8" style={{ background: o.color }}></div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!proposedSession) return null;
+
+  if (proposedSession.type === "maintenance" || proposedSession.type === "rest") {
+    return (
+      <div className="p-4 max-w-screen-md mx-auto">
+        <div className="card p-6 anim-fade-up">
+          <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest">STATUS</div>
+          <div className="font-display text-3xl mt-2 leading-tight">{proposedSession.name}</div>
+          <div className="text-sm text-[var(--ink-dim)] mt-3">{proposedSession.note}</div>
+        </div>
+      </div>
+    );
+  }
+
+  const freq = computeFrequency(sessions, 14);
+  const lastSession = sessions.filter(s => s.completed)[0];
+  const hoursSinceLast = lastSession ? ((Date.now() - new Date(lastSession.date).getTime()) / (60*60*1000)) : null;
+
+  return (
+    <div className="p-4 max-w-screen-md mx-auto pb-safe">
+      {/* Top metadata strip */}
+      <div className="flex items-center justify-between mb-4 font-mono text-[10px] text-[var(--ink-dim)] tracking-widest">
+        <div>PROTOCOL / {proposedSession.split.toUpperCase()}</div>
+        <div>{new Date().toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' }).toUpperCase()}</div>
+      </div>
+
+      {/* Main session card */}
+      <div className="card-accent relative anim-fade-up">
+        {/* Decorative stripes */}
+        <div className="absolute top-0 right-0 w-16 h-1.5 bg-[var(--accent)]"></div>
+        <div className="absolute top-0 right-16 w-8 h-1.5 stripes"></div>
+
+        <div className="p-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="font-mono text-[10px] text-[var(--accent)] tracking-widest">SESSION #{sessions.filter(s => s.completed).length + 1}</div>
+              <h2 className="font-display text-4xl mt-1 leading-none">{proposedSession.type}</h2>
+            </div>
+            <div className="text-right">
+              <div className="font-display text-3xl">{proposedSession.exercises.length}</div>
+              <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest">EXOS</div>
+            </div>
+          </div>
+
+          {/* Meta grid */}
+          <div className="mt-5 grid grid-cols-3 gap-3">
+            <MetaBlock label="VOLUME" value={proposedSession.plannedVolume} unit="SETS" />
+            <MetaBlock label="STYLE" value={proposedSession.style === "heavy" ? "LOURD" : "HYPER"} />
+            <MetaBlock label="DURÉE~" value={estimateDuration(proposedSession)} unit="MIN" />
+          </div>
+
+          <div className="mt-5 pt-4 border-t border-[var(--line)]">
+            <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest mb-2">GROUPES CIBLÉS</div>
+            <div className="flex flex-wrap gap-2">
+              {proposedSession.muscleGroups.map(g => (
+                <span key={g} className="font-mono text-[11px] px-2 py-1 bg-[var(--bg-3)] border border-[var(--line-bright)]">
+                  {g.toUpperCase()}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4 font-mono text-[11px] text-[var(--ink-dim)]">
+            {lastSession ? `→ Dernier entraînement : il y a ${Math.round(hoursSinceLast)}h (${lastSession.type})` : "→ Première séance"}
+          </div>
+        </div>
+      </div>
+
+      {/* Deload banner */}
+      {deloadAvailable && !useDeload && (
+        <div className="mt-3 card p-3 border-[var(--warn)]">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="font-mono text-[10px] text-[var(--warn)] tracking-widest">DELOAD RECOMMANDÉE</div>
+              <div className="text-xs text-[var(--ink-dim)] mt-1">3 semaines consécutives à volume élevé. Propose un deload (-40% volume) ?</div>
+            </div>
+            <button onClick={() => setUseDeload(true)} className="btn btn-ghost text-[10px]">ACCEPT</button>
+          </div>
+        </div>
+      )}
+
+      {/* Exercise preview */}
+      <div className="mt-5">
+        <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest mb-3">SEQUENCE / {proposedSession.exercises.length} EXOS</div>
+        <div className="space-y-2">
+          {proposedSession.exercises.map((ex, i) => (
+            <ExercisePreviewCard key={ex.id + i} ex={ex} idx={i} />
+          ))}
+        </div>
+      </div>
+
+      <button
+        onClick={() => startSession(proposedSession)}
+        className="btn btn-primary w-full mt-6 text-base py-4"
+      >
+        → DÉMARRER LA SÉANCE
+      </button>
+
+      {/* Swap / override panel */}
+      <SwapPanel
+        currentSplit={proposedSession.split}
+        currentKey={proposedSession.sessionKey}
+        onForceSplit={(s) => { setForcedSplit(s); setForcedSessionKey(null); setRegenNonce(n => n+1); }}
+        onForceSession={(k) => { setForcedSessionKey(k); setRegenNonce(n => n+1); }}
+        onReset={resetProposal}
+      />
+    </div>
+  );
+}
+
+function SwapPanel({ currentSplit, currentKey, onForceSplit, onForceSession, onReset }) {
+  const [open, setOpen] = useState(false);
+
+  // Sessions available in the current split (or all if maintenance)
+  const availableSessions = Object.entries(SESSION_TYPES)
+    .filter(([k, v]) => v.split === currentSplit && k !== currentKey);
+
+  return (
+    <div className="mt-3">
+      <button
+        onClick={() => setOpen(!open)}
+        className="btn btn-ghost w-full text-[11px]"
+      >
+        {open ? "▲ FERMER" : "▼ CHANGER / RÉGÉNÉRER"}
+      </button>
+
+      {open && (
+        <div className="card p-4 mt-2 anim-fade-up">
+          {/* Manual session swap */}
+          {availableSessions.length > 0 && (
+            <>
+              <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest mb-2">
+                AUTRE SÉANCE / {currentSplit.toUpperCase()}
+              </div>
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                {availableSessions.map(([k, v]) => (
+                  <button
+                    key={k}
+                    onClick={() => { onForceSession(k); setOpen(false); }}
+                    className="p-3 card text-left hover:border-[var(--ink-dim)]"
+                  >
+                    <div className="font-display text-sm">{v.name}</div>
+                    <div className="font-mono text-[9px] text-[var(--ink-dim)] mt-0.5 tracking-widest">
+                      {v.style.toUpperCase()}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Force different split */}
+          <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest mb-2">
+            FORCER UN AUTRE SPLIT
+          </div>
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {[SPLITS.UPPER_LOWER, SPLITS.PPL, SPLITS.FULL_BODY]
+              .filter(s => s !== currentSplit)
+              .map(s => (
+                <button
+                  key={s}
+                  onClick={() => { onForceSplit(s); setOpen(false); }}
+                  className="p-2 card text-center hover:border-[var(--ink-dim)]"
+                >
+                  <div className="font-mono text-[10px]">{s.toUpperCase()}</div>
+                </button>
+              ))}
+          </div>
+
+          {/* Full reset */}
+          <button
+            onClick={() => { onReset(); setOpen(false); }}
+            className="btn btn-ghost w-full text-[10px] btn-danger"
+          >
+            ↻ RESET COMPLET
+          </button>
+          <div className="font-mono text-[9px] text-[var(--ink-dim)] mt-2 text-center">
+            Reset = efface tous les overrides locaux et re-propose depuis l'algo
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MetaBlock({ label, value, unit }) {
+  return (
+    <div className="border-l-2 border-[var(--accent)] pl-3">
+      <div className="font-mono text-[9px] text-[var(--ink-dim)] tracking-widest">{label}</div>
+      <div className="font-display text-xl mt-0.5">
+        {value}
+        {unit && <span className="font-mono text-[10px] text-[var(--ink-dim)] ml-1">{unit}</span>}
+      </div>
+    </div>
+  );
+}
+
+function ExercisePreviewCard({ ex, idx }) {
+  return (
+    <div className="card p-3 flex items-center gap-3 hover:border-[var(--ink-dim)] transition-colors">
+      <div className="font-display text-2xl text-[var(--ink-low)] w-8">{String(idx + 1).padStart(2, '0')}</div>
+      <div className="flex-1 min-w-0">
+        <div className="font-display text-sm truncate">{ex.name}</div>
+        <div className="font-mono text-[10px] text-[var(--ink-dim)] mt-0.5">
+          {ex.sets}×{ex.repsTarget} · RPE {ex.rpeTarget} · REST {Math.round(ex.restSeconds/60)}′{ex.restSeconds%60 ? String(ex.restSeconds%60).padStart(2,'0') : ''}
+        </div>
+      </div>
+      <div className="text-right">
+        {ex.suggestedWeight ? (
+          <div className="font-display text-base">{ex.suggestedWeight}<span className="text-[10px] font-mono text-[var(--ink-dim)]">KG</span></div>
+        ) : (
+          <div className="font-mono text-[10px] text-[var(--ink-low)]">NEW</div>
+        )}
+        <div className="font-mono text-[9px] text-[var(--ink-dim)] tracking-widest">{ex.tier.slice(0,3).toUpperCase()}</div>
+      </div>
+    </div>
+  );
+}
+
+function estimateDuration(session) {
+  // rough estimate: sets * (restSec + 30s work)
+  let total = 0;
+  for (const ex of session.exercises) {
+    total += ex.sets * (ex.restSeconds + 30);
+  }
+  return Math.round(total / 60);
+}
+
+// ============ ACTIVE SESSION ==============================================
+function ActiveSessionScreen() {
+  const { currentSession, updateCurrentSession, finishSession, discardCurrentSession, sessions } = useApp();
+  const [currentExIdx, setCurrentExIdx] = useState(0);
+  const [restTimer, setRestTimer] = useState(null);
+  const [restRemaining, setRestRemaining] = useState(0);
+  const [sentiment, setSentiment] = useState(null);
+  const [sessionNote, setSessionNote] = useState("");
+  const [confirmFinish, setConfirmFinish] = useState(false);
+  const [showAbandonModal, setShowAbandonModal] = useState(false);
+  const [swapTargetIdx, setSwapTargetIdx] = useState(null); // idx of exo being swapped
+
+  useEffect(() => {
+    if (!restTimer) return;
+    const i = setInterval(() => {
+      const remain = Math.max(0, Math.round((restTimer - Date.now()) / 1000));
+      setRestRemaining(remain);
+      if (remain <= 0) {
+        clearInterval(i);
+        setRestTimer(null);
+        try { navigator.vibrate && navigator.vibrate([100, 50, 100]); } catch {}
+      }
+    }, 200);
+    return () => clearInterval(i);
+  }, [restTimer]);
+
+  if (!currentSession) {
+    return (
+      <div className="p-6 text-center">
+        <div className="font-mono text-xs text-[var(--ink-dim)] tracking-widest">PAS DE SESSION ACTIVE</div>
+      </div>
+    );
+  }
+
+  const exercises = currentSession.exercises || [];
+  const currentEx = exercises[currentExIdx];
+  const allLogged = exercises.every(ex => ex.logged);
+
+  const logSet = async (exIdx, setIdx, field, value) => {
+    await updateCurrentSession(cs => {
+      const next = { ...cs };
+      next.exercises = [...next.exercises];
+      const ex = { ...next.exercises[exIdx] };
+      ex.actualSets = ex.actualSets || Array.from({length: ex.sets}, () => ({ weight: null, reps: null, rpe: null, done: false }));
+      ex.actualSets = [...ex.actualSets];
+      ex.actualSets[setIdx] = { ...ex.actualSets[setIdx], [field]: value };
+      next.exercises[exIdx] = ex;
+      return next;
+    });
+  };
+
+  const toggleSetDone = async (exIdx, setIdx) => {
+    await updateCurrentSession(cs => {
+      const next = { ...cs };
+      next.exercises = [...next.exercises];
+      const ex = { ...next.exercises[exIdx] };
+      ex.actualSets = ex.actualSets || Array.from({length: ex.sets}, () => ({ weight: null, reps: null, rpe: null, done: false }));
+      ex.actualSets = [...ex.actualSets];
+      const wasDone = ex.actualSets[setIdx].done;
+      ex.actualSets[setIdx] = { ...ex.actualSets[setIdx], done: !wasDone };
+      next.exercises[exIdx] = ex;
+      return next;
+    });
+    // Start rest timer on marking done
+    const ex = exercises[exIdx];
+    if (!ex.actualSets?.[setIdx]?.done) {
+      setRestTimer(Date.now() + ex.restSeconds * 1000);
+      setRestRemaining(ex.restSeconds);
+    }
+  };
+
+  const markExerciseLogged = async (exIdx) => {
+    await updateCurrentSession(cs => {
+      const next = { ...cs };
+      next.exercises = [...next.exercises];
+      next.exercises[exIdx] = { ...next.exercises[exIdx], logged: true };
+      return next;
+    });
+    if (exIdx < exercises.length - 1) setCurrentExIdx(exIdx + 1);
+  };
+
+  const finishWholeSession = async () => {
+    // Consolidate loggedExercises for history/progression lookup
+    // Exclude skipped exercises
+    const loggedExercises = exercises
+      .filter(ex => !ex.skipped)
+      .map(ex => {
+        const sets = ex.actualSets || [];
+        const weights = sets.map(s => s.weight).filter(v => v != null);
+        const reps = sets.map(s => s.reps).filter(v => v != null);
+        const rpes = sets.map(s => s.rpe).filter(v => v != null);
+        const avgRpe = rpes.length ? rpes.reduce((a,b)=>a+b,0)/rpes.length : null;
+        const maxWeight = weights.length ? Math.max(...weights) : null;
+        return {
+          id: ex.id,
+          name: ex.name,
+          group: ex.group,
+          weight: maxWeight,
+          reps: reps,
+          rpe: avgRpe,
+          notes: ex.notes || "",
+        };
+      });
+    const final = {
+      ...currentSession,
+      loggedExercises,
+      sentiment,
+      sessionNote,
+    };
+    await finishSession(final);
+  };
+
+  /** Swap an exercise in the current session with a different one */
+  const handleSwap = async (exIdx, replacementDef) => {
+    const newEntry = buildExerciseEntry(replacementDef, currentSession.style, sessions, currentSession.focus);
+    await updateCurrentSession(cs => {
+      const next = { ...cs };
+      next.exercises = [...next.exercises];
+      // Preserve any sets already logged? We reset, since it's a different exercise.
+      next.exercises[exIdx] = { ...newEntry, swapped: true };
+      // Update muscle groups if needed
+      next.muscleGroups = [...new Set(next.exercises.map(e => e.group))];
+      return next;
+    });
+    setSwapTargetIdx(null);
+  };
+
+  /** Skip an exercise: mark as logged but flag as skipped (excluded from history) */
+  const handleSkip = async (exIdx) => {
+    await updateCurrentSession(cs => {
+      const next = { ...cs };
+      next.exercises = [...next.exercises];
+      next.exercises[exIdx] = { ...next.exercises[exIdx], logged: true, skipped: true };
+      return next;
+    });
+    if (exIdx < exercises.length - 1) setCurrentExIdx(exIdx + 1);
+  };
+
+  return (
+    <div className="p-4 max-w-screen-md mx-auto pb-safe anim-fade-up">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <div className="font-mono text-[10px] text-[var(--accent)] tracking-widest">LIVE</div>
+          <div className="font-display text-xl">{currentSession.type}</div>
+        </div>
+        <button
+          onClick={() => setShowAbandonModal(true)}
+          className="btn btn-ghost text-[10px] px-2 py-1 btn-danger"
+          title="Abandonner"
+        >✕ ABANDON</button>
+      </div>
+
+      {/* Rest timer */}
+      {restTimer && restRemaining > 0 && (
+        <div className="card p-3 mb-3 border-[var(--accent)] bg-[var(--bg-3)]">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-mono text-[10px] text-[var(--accent)] tracking-widest">REPOS</div>
+              <div className="font-display text-3xl leading-none">{String(Math.floor(restRemaining/60)).padStart(2,'0')}:{String(restRemaining%60).padStart(2,'0')}</div>
+            </div>
+            <button onClick={() => { setRestTimer(null); setRestRemaining(0); }} className="btn btn-ghost text-[10px]">SKIP</button>
+          </div>
+          <div className="mt-2 h-1 bg-[var(--bg)] relative">
+            <div
+              className="absolute top-0 left-0 h-1 bg-[var(--accent)]"
+              style={{
+                width: `${100 - (restRemaining / (currentEx?.restSeconds || 60)) * 100}%`,
+                transition: 'width 0.2s linear'
+              }}
+            ></div>
+          </div>
+        </div>
+      )}
+
+      {/* Progress strip */}
+      <div className="flex gap-1 mb-4">
+        {exercises.map((ex, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrentExIdx(i)}
+            className={`flex-1 h-1.5 ${ex.logged ? 'bg-[var(--accent)]' : i === currentExIdx ? 'bg-[var(--ink)]' : 'bg-[var(--line)]'}`}
+          />
+        ))}
+      </div>
+
+      {/* Exercise list */}
+      <div className="space-y-3">
+        {exercises.map((ex, i) => (
+          <ActiveExerciseCard
+            key={ex.id + i}
+            ex={ex}
+            idx={i}
+            expanded={i === currentExIdx}
+            onExpand={() => setCurrentExIdx(i)}
+            onToggleSetDone={toggleSetDone}
+            onLogSet={logSet}
+            onMarkLogged={markExerciseLogged}
+            onRequestSwap={(idx) => setSwapTargetIdx(idx)}
+            onSkip={handleSkip}
+          />
+        ))}
+      </div>
+
+      {/* Finish section */}
+      {allLogged && !confirmFinish && (
+        <button onClick={() => setConfirmFinish(true)} className="btn btn-primary w-full mt-6 py-4">
+          → TERMINER LA SÉANCE
+        </button>
+      )}
+
+      {confirmFinish && (
+        <div className="card p-5 mt-6 anim-fade-up">
+          <div className="font-mono text-[10px] text-[var(--accent)] tracking-widest">DEBRIEF</div>
+          <div className="font-display text-2xl mt-1">Comment c'était ?</div>
+
+          <div className="mt-4 flex gap-2 justify-between">
+            {[
+              { emoji: "😤", key: "angry", label: "ÉNERVÉ" },
+              { emoji: "😌", key: "zen",   label: "ZEN" },
+              { emoji: "💪", key: "strong",label: "FORT" },
+              { emoji: "🥴", key: "flat",  label: "FLAT" },
+            ].map(s => (
+              <button
+                key={s.key}
+                onClick={() => setSentiment(s.key)}
+                className={`flex-1 p-3 card text-center ${sentiment === s.key ? 'border-[var(--accent)]' : ''}`}
+              >
+                <div className="text-2xl">{s.emoji}</div>
+                <div className="font-mono text-[9px] text-[var(--ink-dim)] tracking-widest mt-1">{s.label}</div>
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-4">
+            <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest mb-2">NOTES</div>
+            <textarea
+              value={sessionNote}
+              onChange={e => setSessionNote(e.target.value)}
+              rows={3}
+              placeholder="Sensations, blessures, contexte..."
+              className="w-full p-3 text-sm"
+            />
+          </div>
+
+          <button onClick={finishWholeSession} className="btn btn-primary w-full mt-4">
+            → VALIDER & ENREGISTRER
+          </button>
+          <button onClick={() => setConfirmFinish(false)} className="btn btn-ghost w-full mt-2 text-[11px]">
+            RETOUR
+          </button>
+        </div>
+      )}
+
+      {showAbandonModal && (
+        <ConfirmModal
+          title="Abandonner la séance ?"
+          body="Aucune donnée ne sera enregistrée. Tu pourras générer une nouvelle séance ou en choisir une autre manuellement."
+          confirmLabel="ABANDONNER"
+          onConfirm={async () => {
+            setShowAbandonModal(false);
+            await discardCurrentSession();
+          }}
+          onCancel={() => setShowAbandonModal(false)}
+        />
+      )}
+
+      {swapTargetIdx !== null && (
+        <SwapExerciseModal
+          currentExercise={exercises[swapTargetIdx]}
+          onSelect={(replacement) => handleSwap(swapTargetIdx, replacement)}
+          onCancel={() => setSwapTargetIdx(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ActiveExerciseCard({ ex, idx, expanded, onExpand, onToggleSetDone, onLogSet, onMarkLogged, onRequestSwap, onSkip }) {
+  const actualSets = ex.actualSets || Array.from({length: ex.sets}, () => ({ weight: null, reps: null, rpe: null, done: false }));
+  const doneCount = actualSets.filter(s => s.done).length;
+  const unit = ex.repUnit || "reps";
+  const isBodyweight = ex.group === "Core" || ex.id === "plank" || ex.id === "side_plank" || ex.id === "dead_bug" || ex.id === "bird_dog" || ex.id === "pallof";
+
+  return (
+    <div className={`card ${expanded ? 'border-[var(--ink-dim)]' : ''} ${ex.swapped ? 'border-l-2 border-l-[var(--info)]' : ''}`}>
+      <button onClick={onExpand} className="w-full p-3 flex items-center gap-3 text-left">
+        <div className="font-display text-2xl text-[var(--ink-low)] w-8 flex-shrink-0">{String(idx + 1).padStart(2, '0')}</div>
+        <div className="flex-1 min-w-0">
+          <div className="font-display text-sm truncate">
+            {ex.name}
+            {ex.swapped && <span className="font-mono text-[9px] text-[var(--info)] ml-2">SWAP</span>}
+          </div>
+          <div className="font-mono text-[10px] text-[var(--ink-dim)] mt-0.5">
+            {doneCount}/{ex.sets} sets · {ex.sets}×{ex.repsTarget}{unit === 'sec' ? 's' : ''} · RPE {ex.rpeTarget}
+          </div>
+        </div>
+        <div className="font-mono text-[10px] text-[var(--ink-dim)]">{expanded ? '▲' : '▼'}</div>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-[var(--line)] p-3 anim-fade-up">
+          {ex.lastSession && (
+            <div className="font-mono text-[10px] text-[var(--ink-dim)] mb-3">
+              → Dernière fois : {ex.lastSession.weight ? `${ex.lastSession.weight}kg × ` : ''}[{ex.lastSession.reps?.join(', ') || '?'}] · RPE {ex.lastSession.rpe?.toFixed(1) || '?'}
+            </div>
+          )}
+          {ex.progressionNote && (
+            <div className="font-mono text-[10px] text-[var(--accent)] mb-3">
+              → {ex.progressionNote}
+            </div>
+          )}
+
+          {/* Action bar: swap + skip */}
+          <div className="flex gap-2 mb-3">
+            <button
+              onClick={() => onRequestSwap(idx)}
+              className="btn btn-ghost flex-1 text-[10px] py-2"
+              title="Remplacer par un autre exercice (même groupe ou autre)"
+            >
+              ⇄ REMPLACER
+            </button>
+            <button
+              onClick={() => {
+                if (confirm("Passer cet exercice ?\nIl sera marqué comme non fait et n'apparaîtra pas dans l'historique.")) {
+                  onSkip(idx);
+                }
+              }}
+              className="btn btn-ghost flex-1 text-[10px] py-2"
+            >
+              → SKIP
+            </button>
+          </div>
+
+          {/* Sets table */}
+          <div className="space-y-2">
+            <div className="grid grid-cols-12 gap-2 font-mono text-[9px] text-[var(--ink-low)] tracking-widest px-1">
+              <div className="col-span-1"></div>
+              <div className="col-span-2">SET</div>
+              <div className={isBodyweight ? "col-span-0 hidden" : "col-span-4"}>
+                {isBodyweight ? '' : 'KG'}
+              </div>
+              <div className={isBodyweight ? "col-span-7" : "col-span-3"}>
+                {unit === 'sec' ? 'SEC' : 'REPS'}
+              </div>
+              <div className="col-span-2">RPE</div>
+            </div>
+            {actualSets.map((s, i) => (
+              <div key={i} className="grid grid-cols-12 gap-2 items-center">
+                <div className="col-span-1">
+                  <div
+                    className={`set-check ${s.done ? 'done' : ''}`}
+                    onClick={() => onToggleSetDone(idx, i)}
+                  ></div>
+                </div>
+                <div className="col-span-2 font-mono text-sm">{i + 1}</div>
+                {!isBodyweight && (
+                  <div className="col-span-4">
+                    <input
+                      type="number"
+                      step="0.5"
+                      inputMode="decimal"
+                      value={s.weight ?? ''}
+                      onChange={e => onLogSet(idx, i, 'weight', e.target.value ? parseFloat(e.target.value) : null)}
+                      placeholder={ex.suggestedWeight ? String(ex.suggestedWeight) : '-'}
+                      className="w-full px-2 py-1.5 text-sm"
+                    />
+                  </div>
+                )}
+                <div className={isBodyweight ? "col-span-7" : "col-span-3"}>
+                  <input
+                    type="number"
+                    step="1"
+                    inputMode="numeric"
+                    value={s.reps ?? ''}
+                    onChange={e => onLogSet(idx, i, 'reps', e.target.value ? parseInt(e.target.value, 10) : null)}
+                    placeholder={ex.repsTarget}
+                    className="w-full px-2 py-1.5 text-sm"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="1"
+                    max="10"
+                    inputMode="decimal"
+                    value={s.rpe ?? ''}
+                    onChange={e => onLogSet(idx, i, 'rpe', e.target.value ? parseFloat(e.target.value) : null)}
+                    placeholder={String(ex.rpeTarget)}
+                    className="w-full px-2 py-1.5 text-sm"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Notes */}
+          <div className="mt-3">
+            <input
+              type="text"
+              value={ex.notes || ''}
+              onChange={e => {
+                ex.notes = e.target.value;
+              }}
+              onBlur={(e) => {
+                const event = new CustomEvent('ex-note', { detail: { idx, value: e.target.value }});
+                window.dispatchEvent(event);
+              }}
+              placeholder="Note technique..."
+              className="w-full px-2 py-1.5 text-xs"
+            />
+          </div>
+
+          <button onClick={() => onMarkLogged(idx)} className="btn btn-primary w-full mt-3 text-xs">
+            → EXO SUIVANT
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SwapExerciseModal({ currentExercise, onSelect, onCancel }) {
+  const [filterGroup, setFilterGroup] = useState(currentExercise?.group || "all");
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  const allGroups = ["all", ...new Set(EXERCISES.map(e => e.group))];
+  const filtered = EXERCISES.filter(e => {
+    if (e.id === currentExercise?.id) return false;
+    if (filterGroup !== "all" && e.group !== filterGroup) return false;
+    if (search && !e.name.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.8)' }}
+      onClick={onCancel}
+    >
+      <div
+        className="w-full max-w-md card-accent anim-fade-up max-h-[85vh] flex flex-col"
+        style={{ margin: '16px' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="p-4 border-b border-[var(--line)]">
+          <div className="flex items-center justify-between mb-2">
+            <div className="font-mono text-[10px] text-[var(--info)] tracking-widest">REMPLACER</div>
+            <button onClick={onCancel} className="font-mono text-xs text-[var(--ink-dim)]">✕</button>
+          </div>
+          <div className="font-display text-lg leading-tight">{currentExercise?.name}</div>
+          <div className="font-mono text-[10px] text-[var(--ink-dim)] mt-1">→ par :</div>
+
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Chercher un exo..."
+            className="w-full mt-3 px-3 py-2 text-sm"
+          />
+
+          <div className="flex gap-1 mt-2 overflow-x-auto pb-1" style={{WebkitOverflowScrolling: 'touch'}}>
+            {allGroups.map(g => (
+              <button
+                key={g}
+                onClick={() => setFilterGroup(g)}
+                className={`font-mono text-[10px] px-2 py-1 whitespace-nowrap border ${filterGroup === g ? 'border-[var(--accent)] text-[var(--accent)]' : 'border-[var(--line)] text-[var(--ink-dim)]'}`}
+              >
+                {g === "all" ? "TOUS" : g.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-3">
+          {filtered.length === 0 && (
+            <div className="text-center py-8 font-mono text-xs text-[var(--ink-dim)]">
+              Aucun exo trouvé
+            </div>
+          )}
+          <div className="space-y-1">
+            {filtered.map(ex => (
+              <button
+                key={ex.id}
+                onClick={() => onSelect(ex)}
+                className="w-full p-3 card text-left hover:border-[var(--ink-dim)] transition-colors"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-display text-sm truncate">{ex.name}</div>
+                    <div className="font-mono text-[10px] text-[var(--ink-dim)] mt-0.5">
+                      {ex.group.toUpperCase()} · {ex.tier.toUpperCase()} · {ex.role === 'compound' ? 'POLY' : 'ISO'}
+                    </div>
+                  </div>
+                  <div className="font-mono text-[10px] text-[var(--accent)]">→</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============ HISTORY =====================================================
+function HistoryScreen() {
+  const { sessions, deleteSession } = useApp();
+  const completed = sessions.filter(s => s.completed).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  if (completed.length === 0) {
+    return (
+      <div className="p-6 text-center">
+        <div className="font-display text-xl">Aucune séance</div>
+        <div className="font-mono text-xs text-[var(--ink-dim)] mt-2">Complète ta première séance pour voir ton historique.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 max-w-screen-md mx-auto pb-safe">
+      <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest mb-3">HISTORY / {completed.length} SESSIONS</div>
+      <div className="space-y-2">
+        {completed.map(s => <HistoryCard key={s.id} session={s} onDelete={deleteSession} />)}
+      </div>
+    </div>
+  );
+}
+
+function HistoryCard({ session, onDelete }) {
+  const [expanded, setExpanded] = useState(false);
+  const totalVolume = (session.loggedExercises || []).reduce((sum, ex) => {
+    return sum + (ex.reps || []).reduce((a,b) => a+b, 0) * (ex.weight || 0);
+  }, 0);
+  const date = new Date(session.date);
+
+  return (
+    <div className="card">
+      <button onClick={() => setExpanded(!expanded)} className="w-full p-3 text-left">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="font-display text-base">{session.type}</div>
+            <div className="font-mono text-[10px] text-[var(--ink-dim)] mt-0.5">
+              {date.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' })} · {session.muscleGroups?.join(' / ')}
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="font-display text-sm">{Math.round(totalVolume)}<span className="font-mono text-[9px] text-[var(--ink-dim)]">KG·R</span></div>
+            <div className="font-mono text-[9px] text-[var(--ink-dim)]">{expanded ? '▲' : '▼'}</div>
+          </div>
+        </div>
+      </button>
+      {expanded && (
+        <div className="border-t border-[var(--line)] p-3 anim-fade-up">
+          <div className="space-y-2">
+            {(session.loggedExercises || []).map((ex, i) => (
+              <div key={i} className="flex items-start justify-between text-xs gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="font-display truncate">{ex.name}</div>
+                  <div className="font-mono text-[10px] text-[var(--ink-dim)]">
+                    {ex.weight}kg × [{(ex.reps || []).join(', ')}]
+                  </div>
+                </div>
+                <div className="font-mono text-[10px] text-[var(--ink-dim)]">
+                  RPE {ex.rpe?.toFixed(1) || '-'}
+                </div>
+              </div>
+            ))}
+          </div>
+          {session.sessionNote && (
+            <div className="mt-3 p-2 bg-[var(--bg-3)] border-l-2 border-[var(--accent)]">
+              <div className="font-mono text-[9px] text-[var(--ink-dim)] tracking-widest">NOTE</div>
+              <div className="text-xs mt-1">{session.sessionNote}</div>
+            </div>
+          )}
+          <button
+            onClick={() => { if (confirm("Supprimer cette séance ?")) onDelete(session.id); }}
+            className="btn btn-ghost btn-danger text-[10px] mt-3"
+          >
+            SUPPRIMER
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============ STATS =======================================================
+function StatsScreen() {
+  const { sessions } = useApp();
+  const completed = sessions.filter(s => s.completed);
+
+  if (completed.length < 2) {
+    return (
+      <div className="p-6 text-center">
+        <div className="font-display text-xl">Pas assez de données</div>
+        <div className="font-mono text-xs text-[var(--ink-dim)] mt-2">Complète au moins 2 séances pour voir tes stats.</div>
+      </div>
+    );
+  }
+
+  // Weekly volume trend (last 12 weeks)
+  const weekMap = {};
+  for (const s of completed) {
+    const d = new Date(s.date);
+    const year = d.getFullYear();
+    const week = getWeekNumber(d);
+    const key = `${year}-W${String(week).padStart(2, '0')}`;
+    const vol = (s.loggedExercises || []).reduce((sum, ex) =>
+      sum + (ex.reps || []).reduce((a,b) => a+b, 0) * (ex.weight || 0), 0);
+    if (!weekMap[key]) weekMap[key] = { key, volume: 0, sessions: 0 };
+    weekMap[key].volume += vol;
+    weekMap[key].sessions += 1;
+  }
+  const weekData = Object.values(weekMap).sort((a,b) => a.key.localeCompare(b.key)).slice(-12);
+
+  // Frequency trend (rolling 14d, by week)
+  const freqData = weekData.map((w, i) => {
+    const idx = Object.values(weekMap).findIndex(x => x.key === w.key);
+    const recentTwo = Object.values(weekMap).slice(Math.max(0, idx-1), idx+1);
+    const totalSess = recentTwo.reduce((a, b) => a + b.sessions, 0);
+    return { key: w.key, freq: totalSess / 2 };
+  });
+
+  // Group frequency (last 30d)
+  const groupFreq = groupFrequencyMap(sessions, 30);
+  const groupData = Object.entries(groupFreq)
+    .filter(([_, v]) => v > 0)
+    .map(([name, value]) => ({ name: name.slice(0,4), value }));
+
+  const { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } = Recharts;
+
+  return (
+    <div className="p-4 max-w-screen-md mx-auto pb-safe">
+      <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest mb-4">ANALYTICS</div>
+
+      {/* KPI strip */}
+      <div className="grid grid-cols-3 gap-2 mb-4">
+        <KpiCard label="TOT SESS" value={completed.length} />
+        <KpiCard label="VOL 7J" value={Math.round(weekData.slice(-1)[0]?.volume || 0)} unit="KG·R" />
+        <KpiCard label="FREQ" value={computeFrequency(sessions, 14).toFixed(1)} unit="/WK" />
+      </div>
+
+      {/* Volume trend */}
+      <div className="card p-4 mb-4">
+        <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest mb-3">VOLUME / 12 WEEKS</div>
+        <div style={{ width: '100%', height: 180 }}>
+          <ResponsiveContainer>
+            <BarChart data={weekData} margin={{top: 5, right: 5, bottom: 5, left: 0}}>
+              <CartesianGrid strokeDasharray="2 4" stroke="#2a2a2a" vertical={false} />
+              <XAxis dataKey="key" tick={{ fontSize: 9, fill: '#8a8a8a' }} axisLine={{stroke:'#3a3a3a'}} tickLine={false} tickFormatter={(v) => v.split('-W')[1]} />
+              <YAxis tick={{ fontSize: 9, fill: '#8a8a8a' }} axisLine={{stroke:'#3a3a3a'}} tickLine={false} width={40} />
+              <Tooltip
+                contentStyle={{background:'#141414', border:'1px solid #3a3a3a', fontFamily:'JetBrains Mono', fontSize:11}}
+                labelStyle={{color:'#e8e8e8'}}
+              />
+              <Bar dataKey="volume" fill="#c6f042" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Frequency trend */}
+      <div className="card p-4 mb-4">
+        <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest mb-3">FREQUENCY TREND</div>
+        <div style={{ width: '100%', height: 140 }}>
+          <ResponsiveContainer>
+            <LineChart data={freqData} margin={{top: 5, right: 5, bottom: 5, left: 0}}>
+              <CartesianGrid strokeDasharray="2 4" stroke="#2a2a2a" vertical={false} />
+              <XAxis dataKey="key" tick={{ fontSize: 9, fill: '#8a8a8a' }} axisLine={{stroke:'#3a3a3a'}} tickLine={false} tickFormatter={(v) => v.split('-W')[1]} />
+              <YAxis tick={{ fontSize: 9, fill: '#8a8a8a' }} axisLine={{stroke:'#3a3a3a'}} tickLine={false} width={30} domain={[0, 'dataMax + 1']} />
+              <Tooltip
+                contentStyle={{background:'#141414', border:'1px solid #3a3a3a', fontFamily:'JetBrains Mono', fontSize:11}}
+              />
+              <Line type="stepAfter" dataKey="freq" stroke="#c6f042" strokeWidth={2} dot={{fill:'#c6f042', r: 3}} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Group frequency */}
+      <div className="card p-4 mb-4">
+        <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest mb-3">GROUPS / LAST 30 DAYS</div>
+        <div style={{ width: '100%', height: 180 }}>
+          <ResponsiveContainer>
+            <BarChart data={groupData} layout="vertical" margin={{top: 5, right: 20, bottom: 5, left: 0}}>
+              <CartesianGrid strokeDasharray="2 4" stroke="#2a2a2a" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 9, fill: '#8a8a8a' }} axisLine={{stroke:'#3a3a3a'}} tickLine={false} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: '#8a8a8a', fontFamily: 'JetBrains Mono' }} axisLine={{stroke:'#3a3a3a'}} tickLine={false} width={50} />
+              <Tooltip
+                contentStyle={{background:'#141414', border:'1px solid #3a3a3a', fontFamily:'JetBrains Mono', fontSize:11}}
+              />
+              <Bar dataKey="value" fill="#c6f042" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Recent sessions list */}
+      <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest mb-2">RECENT DISTRIBUTION</div>
+      <div className="flex gap-1 h-10 mb-8">
+        {completed.slice(0, 30).reverse().map((s, i) => {
+          const color = s.style === 'heavy' ? 'var(--accent)' : 'var(--info)';
+          return (
+            <div
+              key={i}
+              className="flex-1"
+              style={{ background: color, opacity: 0.3 + Math.min(1, (s.plannedVolume || 10) / 30) * 0.7 }}
+              title={s.type}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function KpiCard({ label, value, unit }) {
+  return (
+    <div className="card p-3">
+      <div className="font-mono text-[9px] text-[var(--ink-dim)] tracking-widest">{label}</div>
+      <div className="font-display text-xl mt-1 leading-none">
+        {value}
+        {unit && <span className="font-mono text-[9px] text-[var(--ink-dim)] ml-1">{unit}</span>}
+      </div>
+    </div>
+  );
+}
+
+// ============ SETTINGS ====================================================
+function SettingsScreen() {
+  const { settings, updateSettings, sessions, isFirebase } = useApp();
+  const [showDebug, setShowDebug] = useState(false);
+
+  if (!settings) return null;
+
+  const exportData = () => {
+    const data = { settings, sessions, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `forge_export_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="p-4 max-w-screen-md mx-auto pb-safe">
+      <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest mb-4">CONFIGURATION</div>
+
+      <div className="card p-4 mb-4">
+        <div className="font-display text-sm mb-3">Objectif hebdomadaire</div>
+        <div className="grid grid-cols-4 gap-2">
+          {[2, 3, 4, 5].map(n => (
+            <button
+              key={n}
+              onClick={() => updateSettings({ weeklyTarget: n })}
+              className={`p-3 border ${settings.weeklyTarget === n ? 'border-[var(--accent)] bg-[var(--bg-3)]' : 'border-[var(--line)]'}`}
+            >
+              <div className="font-display text-xl">{n}</div>
+              <div className="font-mono text-[9px] text-[var(--ink-dim)] mt-1">/WK</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="card p-4 mb-4">
+        <div className="font-display text-sm mb-3">Règles du protocole</div>
+
+        <label className="flex items-center justify-between py-3 border-b border-[var(--line)]">
+          <div className="flex-1 pr-4">
+            <div className="text-sm">Deload adaptative</div>
+            <div className="font-mono text-[10px] text-[var(--ink-dim)] mt-0.5">Propose deload si 3 sem. volume élevé</div>
+          </div>
+          <input
+            type="checkbox"
+            checked={settings.adaptiveDeload}
+            onChange={e => updateSettings({ adaptiveDeload: e.target.checked })}
+            className="accent-[var(--accent)] w-5 h-5"
+          />
+        </label>
+
+        <label className="flex items-center justify-between py-3">
+          <div className="flex-1 pr-4">
+            <div className="text-sm">Repos 48h strict</div>
+            <div className="font-mono text-[10px] text-[var(--ink-dim)] mt-0.5">Refuse groupes &lt;48h</div>
+          </div>
+          <input
+            type="checkbox"
+            checked={settings.strictRest}
+            onChange={e => updateSettings({ strictRest: e.target.checked })}
+            className="accent-[var(--accent)] w-5 h-5"
+          />
+        </label>
+      </div>
+
+      <div className="card p-4 mb-4">
+        <div className="font-display text-sm mb-3">Données</div>
+
+        <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest mb-3">
+          <div>STORAGE · {isFirebase ? "FIREBASE + LOCAL" : "LOCAL ONLY"}</div>
+          <div className="mt-0.5">SESSIONS · {sessions.filter(s=>s.completed).length}</div>
+        </div>
+
+        <button onClick={exportData} className="btn btn-ghost w-full mb-2 text-xs">
+          EXPORT JSON
+        </button>
+        <button
+          onClick={() => setShowDebug(!showDebug)}
+          className="btn btn-ghost w-full text-xs"
+        >
+          {showDebug ? "HIDE" : "SHOW"} DEBUG
+        </button>
+      </div>
+
+      {showDebug && (
+        <div className="card p-3 mb-4 font-mono text-[10px] overflow-auto">
+          <pre className="whitespace-pre-wrap break-all">{JSON.stringify({ settings, sessions: sessions.slice(0, 3) }, null, 2)}</pre>
+        </div>
+      )}
+
+      <div className="text-center font-mono text-[10px] text-[var(--ink-low)] tracking-widest mt-8">
+        FORGE / WORKOUT PROTOCOL / v1.0
+      </div>
+    </div>
+  );
+}
+
+// ============ APP ROOT ====================================================
+function AppRoot() {
+  const { bootState, tab } = useApp();
+
+  if (bootState === "loading") return <LoadingScreen />;
+  if (bootState === "needsOnboarding") return <Onboarding />;
+
+  return (
+    <div className="min-h-screen bg-grid">
+      <Header />
+      <main className="relative z-10">
+        {tab === "today"    && <TodayScreen />}
+        {tab === "active"   && <ActiveSessionScreen />}
+        {tab === "history"  && <HistoryScreen />}
+        {tab === "stats"    && <StatsScreen />}
+        {tab === "settings" && <SettingsScreen />}
+      </main>
+      <BottomNav />
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <AppProvider>
+      <AppRoot />
+    </AppProvider>
+  );
+}
+
+// ============ MOUNT =======================================================
+const rootEl = document.getElementById("root");
+const root = ReactDOM.createRoot(rootEl);
+root.render(<App />);
+
+// Register Service Worker for PWA offline/caching (only on HTTPS or localhost)
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW register failed:', err));
+  });
+}
+</script>
+
+</body>
+</html>
