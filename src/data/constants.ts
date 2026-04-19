@@ -104,6 +104,7 @@ export interface Settings {
   adaptiveDeload: boolean
   strictRest: boolean
   createdAt: string
+  excludedGroups?: string[]  // Bug modéré #3
 }
 
 export interface AppData {

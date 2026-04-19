@@ -117,9 +117,9 @@ export function buildExerciseEntry(
   }
 }
 
-export function buildExercises(focus: string, style: 'heavy' | 'hyper', sessions: Session[]): ExerciseEntry[] {
-  const groups = getGroupsForFocus(focus)
-  const mainGroups = MAIN_GROUPS_BY_FOCUS[focus] || []
+export function buildExercises(focus: string, style: 'heavy' | 'hyper', sessions: Session[], excludedGroups: string[] = []): ExerciseEntry[] {
+  const groups = getGroupsForFocus(focus).filter(g => !excludedGroups.includes(g))
+  const mainGroups = (MAIN_GROUPS_BY_FOCUS[focus] || []).filter(g => !excludedGroups.includes(g))
   const result: ExerciseEntry[] = []
 
   for (const group of groups) {

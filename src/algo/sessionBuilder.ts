@@ -55,7 +55,7 @@ export function buildNextSession(sessions: Session[], settings: Settings, overri
     } as any
   }
 
-  let exercises = buildExercises(picked.focus, picked.style, sessions)
+  let exercises = buildExercises(picked.focus, picked.style, sessions, settings.excludedGroups || [])
 
   const recovery = overrides.recovery || 'good'
 

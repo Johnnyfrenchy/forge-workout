@@ -67,6 +67,28 @@ export function SettingsScreen() {
       </div>
 
       <div className="card p-4 mb-4">
+        <div className="font-display text-sm mb-1">Groupes exclus</div>
+        <div className="font-mono text-[10px] text-[var(--ink-dim)] mb-3">Ces groupes ne seront jamais programmés</div>
+        <div className="grid grid-cols-2 gap-1.5">
+          {['Chest','Back','Shoulders','Triceps','Biceps','Quads','Hamstrings','Glutes','Calves'].map(g => {
+            const excluded = (settings.excludedGroups || []).includes(g)
+            return (
+              <button
+                key={g}
+                onClick={() => {
+                  const current = settings.excludedGroups || []
+                  updateSettings({ excludedGroups: excluded ? current.filter(x => x !== g) : [...current, g] })
+                }}
+                className={`p-2 border text-left font-mono text-[10px] transition-colors ${excluded ? 'border-[var(--danger)] text-[var(--danger)]' : 'border-[var(--line)] text-[var(--ink-dim)]'}`}
+              >
+                {excluded ? '✕ ' : '+ '}{g.toUpperCase()}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="card p-4 mb-4">
         <div className="font-display text-sm mb-3">Données</div>
         <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest mb-3">
           <div>STORAGE · {isFirebase ? 'FIREBASE + LOCAL' : 'LOCAL ONLY'}</div>

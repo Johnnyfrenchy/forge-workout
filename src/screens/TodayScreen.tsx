@@ -3,7 +3,7 @@ import { useApp } from '../hooks/useApp'
 import { buildNextSession, buildSessionFromType, estimateDuration } from '../algo/sessionBuilder'
 import { daysSinceLastSession } from '../algo/recovery'
 import { shouldProposeDeload } from '../algo/deload'
-import { computeFrequency } from '../algo/frequency'
+import { computeFrequency, detectMesocycle } from '../algo/frequency'
 import { ConfirmModal } from '../components/ConfirmModal'
 import { ExercisePreviewCard } from '../components/ExercisePreviewCard'
 import { SwapPanel } from '../components/SwapPanel'
@@ -19,6 +19,8 @@ export function TodayScreen() {
   const [forcedSessionKey, setForcedSessionKey] = useState<string | null>(null)
   const [regenNonce, setRegenNonce] = useState(0)
   const [showAbandonModal, setShowAbandonModal] = useState(false)
+  const [dismissDoubleSession, setDismissDoubleSession] = useState(false)
+  const [dismissMesocycle, setDismissMesocycle] = useState(false)
 
   useEffect(() => {
     const days = daysSinceLastSession(sessions)
@@ -134,6 +136,17 @@ export function TodayScreen() {
   const lastSession = sessions.filter(s => s.completed).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
   const hoursSinceLast = lastSession ? ((Date.now() - new Date(lastSession.date).getTime()) / (60 * 60 * 1000)) : null
 
+  // Bug modéré #4 — Double session même jour
+  const today = new Date().toISOString().slice(0, 10)
+  const trainedToday = sessions.some(s => s.completed && s.date.slice(0, 10) === today)
+
+  // Bug modéré #5 — Split transition
+  const lastSplit = lastSession?.split ?? null
+  const splitChanged = lastSplit && lastSplit !== proposedSession.split
+
+  // Bug modéré #1 — Mésocycle
+  const mesocycle = detectMesocycle(sessions)
+
   return (
     <div className="p-4 max-w-screen-md mx-auto pb-with-action">
       <div className="flex items-center justify-between mb-4 font-mono text-[10px] text-[var(--ink-dim)] tracking-widest">
@@ -180,6 +193,40 @@ export function TodayScreen() {
           </div>
         </div>
       </div>
+
+      {/* Bug #4 — Double session */}
+      {trainedToday && !dismissDoubleSession && (
+        <div className="mt-3 card p-3 border-[var(--warn)]">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="font-mono text-[10px] text-[var(--warn)] tracking-widest">DÉJÀ ENTRAÎNÉ AUJOURD'HUI</div>
+              <div className="text-xs text-[var(--ink-dim)] mt-1">Tu as déjà complété une séance ce jour. Une 2ème peut nuire à la récupération.</div>
+            </div>
+            <button onClick={() => setDismissDoubleSession(true)} className="btn btn-ghost text-[10px] shrink-0">OK</button>
+          </div>
+        </div>
+      )}
+
+      {/* Bug #5 — Split transition */}
+      {splitChanged && (
+        <div className="mt-3 card p-3 border-[var(--info)]">
+          <div className="font-mono text-[10px] text-[var(--info)] tracking-widest">CHANGEMENT DE SPLIT</div>
+          <div className="text-xs text-[var(--ink-dim)] mt-1">{lastSplit} → {proposedSession.split} — ta fréquence a changé, le protocole s'adapte.</div>
+        </div>
+      )}
+
+      {/* Bug #1 — Mésocycle */}
+      {mesocycle.active && !dismissMesocycle && (
+        <div className="mt-3 card p-3 border-[var(--info)]">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="font-mono text-[10px] text-[var(--info)] tracking-widest">MÉSOCYCLE {mesocycle.weeks} SEMAINES</div>
+              <div className="text-xs text-[var(--ink-dim)] mt-1">{mesocycle.weeks} semaines sur {mesocycle.split}. Envisage une semaine de variation ou un deload actif.</div>
+            </div>
+            <button onClick={() => setDismissMesocycle(true)} className="btn btn-ghost text-[10px] shrink-0">OK</button>
+          </div>
+        </div>
+      )}
 
       {proposedSession.note && (
         <div className="mt-3 card p-3 border-[var(--warn)]">
