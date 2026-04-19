@@ -35,11 +35,18 @@ export function StatsScreen() {
     return { key: w.key, freq: total / Math.max(1, slice.length) }
   })
 
+  const GROUP_ABBR: Record<string, string> = {
+    Chest: 'Chest', Back: 'Back', Shoulders: 'Delt', Triceps: 'Tric',
+    Biceps: 'Bic', Quads: 'Quad', Hamstrings: 'Ham', Glutes: 'Glut',
+    Calves: 'Calv', Core: 'Core',
+  }
   const groupFreq = groupFrequencyMap(sessions, 30)
   const groupData = Object.entries(groupFreq)
     .filter(([, v]) => v > 0)
-    .map(([name, value]) => ({ name: name.slice(0, 4), value }))
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, value]) => ({ name: GROUP_ABBR[name] ?? name.slice(0, 5), value }))
 
+  const fmtVol = (v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}K` : String(Math.round(v))
   const tooltipStyle = { background: '#141414', border: '1px solid #3a3a3a', fontFamily: 'JetBrains Mono', fontSize: 11 }
 
   return (
@@ -48,7 +55,7 @@ export function StatsScreen() {
 
       <div className="grid grid-cols-3 gap-2 mb-4">
         <KpiCard label="TOT SESS" value={completed.length} />
-        <KpiCard label="VOL 7J" value={Math.round(weekData.slice(-1)[0]?.volume || 0)} unit="KG·R" />
+        <KpiCard label="VOL 7J" value={fmtVol(weekData.slice(-1)[0]?.volume || 0)} unit="KG·R" />
         <KpiCard label="FREQ" value={computeFrequency(sessions, 14).toFixed(1)} unit="/WK" />
       </div>
 
@@ -59,8 +66,8 @@ export function StatsScreen() {
             <BarChart data={weekData} margin={{ top: 5, right: 5, bottom: 5, left: 0 }}>
               <CartesianGrid strokeDasharray="2 4" stroke="#2a2a2a" vertical={false} />
               <XAxis dataKey="key" tick={{ fontSize: 9, fill: '#8a8a8a' }} axisLine={{ stroke: '#3a3a3a' }} tickLine={false} tickFormatter={v => v.split('-W')[1]} />
-              <YAxis tick={{ fontSize: 9, fill: '#8a8a8a' }} axisLine={{ stroke: '#3a3a3a' }} tickLine={false} width={40} />
-              <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#e8e8e8' }} />
+              <YAxis tick={{ fontSize: 9, fill: '#8a8a8a' }} axisLine={{ stroke: '#3a3a3a' }} tickLine={false} width={40} tickFormatter={fmtVol} />
+              <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#e8e8e8' }} formatter={(v: number) => [fmtVol(v), 'Volume']} />
               <Bar dataKey="volume" fill="#c6f042" />
             </BarChart>
           </ResponsiveContainer>
@@ -84,7 +91,7 @@ export function StatsScreen() {
 
       <div className="card p-4 mb-4">
         <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest mb-3">GROUPS / LAST 30 DAYS</div>
-        <div style={{ width: '100%', height: 180 }}>
+        <div style={{ width: '100%', height: Math.max(180, groupData.length * 26) }}>
           <ResponsiveContainer>
             <BarChart data={groupData} layout="vertical" margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
               <CartesianGrid strokeDasharray="2 4" stroke="#2a2a2a" horizontal={false} />

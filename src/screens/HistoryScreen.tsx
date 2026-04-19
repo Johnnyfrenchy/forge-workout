@@ -46,7 +46,7 @@ function HistoryCard({ session, onDelete }: { session: Session; onDelete: (id: s
             </div>
           </div>
           <div className="text-right">
-            <div className="font-display text-sm">{Math.round(totalVolume)}<span className="font-mono text-[9px] text-[var(--ink-dim)]">KG·R</span></div>
+            <div className="font-display text-sm">{totalVolume >= 1000 ? `${(totalVolume/1000).toFixed(1)}K` : Math.round(totalVolume)}<span className="font-mono text-[9px] text-[var(--ink-dim)]">KG·R</span></div>
             <div className="font-mono text-[9px] text-[var(--ink-dim)]">{expanded ? '▲' : '▼'}</div>
           </div>
         </div>

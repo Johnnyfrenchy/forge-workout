@@ -131,7 +131,7 @@ export function TodayScreen() {
     )
   }
 
-  const lastSession = sessions.filter(s => s.completed)[0]
+  const lastSession = sessions.filter(s => s.completed).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
   const hoursSinceLast = lastSession ? ((Date.now() - new Date(lastSession.date).getTime()) / (60 * 60 * 1000)) : null
 
   return (
