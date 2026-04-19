@@ -1,0 +1,17 @@
+{
+  "name": "FORGE / Workout Protocol",
+  "short_name": "FORGE",
+  "description": "Protocole d'entraînement automatique",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgZmlsbD0iIzBhMGEwYSIvPjxwb2x5Z29uIHBvaW50cz0iNDAsNDAgMTQwLDQwIDE0MCwxMDYgMTA2LDE0MCA0MCwxNDAiIGZpbGw9IiNjNmYwNDIiLz48dGV4dCB4PSI1NSIgeT0iMTE0IiBmb250LWZhbWlseT0iVmVyZGFuYSxzYW5zLXNlcmlmIiBmb250LXNpemU9IjYwIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjMDAwIj5GPC90ZXh0Pjwvc3ZnPg==",
+      "sizes": "180x180",
+      "type": "image/svg+xml"
+    }
+  ]
+}
