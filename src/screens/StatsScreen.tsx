@@ -42,7 +42,7 @@ export function StatsScreen() {
   }
   const groupFreq = groupFrequencyMap(sessions, 30)
   const groupData = Object.entries(groupFreq)
-    .filter(([, v]) => v > 0)
+    .filter(([name, v]) => v > 0 && name !== 'Core')
     .sort((a, b) => b[1] - a[1])
     .map(([name, value]) => ({ name: GROUP_ABBR[name] ?? name.slice(0, 5), value }))
 

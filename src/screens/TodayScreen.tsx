@@ -119,12 +119,12 @@ export function TodayScreen() {
 
   if (!proposedSession) return null
 
-  if ((proposedSession as any).type === 'maintenance' || (proposedSession as any).type === 'rest') {
+  if ((proposedSession as any).type === 'rest') {
     return (
       <div className="p-4 max-w-screen-md mx-auto">
         <div className="card p-6 anim-fade-up">
-          <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest">STATUS</div>
-          <div className="font-display text-3xl mt-2 leading-tight">{(proposedSession as any).name || proposedSession.type}</div>
+          <div className="font-mono text-[10px] text-[var(--ink-dim)] tracking-widest">REPOS</div>
+          <div className="font-display text-3xl mt-2 leading-tight">Récupération</div>
           <div className="text-sm text-[var(--ink-dim)] mt-3">{proposedSession.note}</div>
         </div>
       </div>
@@ -181,15 +181,28 @@ export function TodayScreen() {
         </div>
       </div>
 
+      {proposedSession.note && (
+        <div className="mt-3 card p-3 border-[var(--warn)]">
+          <div className="font-mono text-[10px] text-[var(--warn)] tracking-widest mb-1">REPRISE PROGRESSIVE</div>
+          <div className="text-xs text-[var(--ink-dim)]">{proposedSession.note}</div>
+        </div>
+      )}
+
       {deloadAvailable && !useDeload && (
         <div className="mt-3 card p-3 border-[var(--warn)]">
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="font-mono text-[10px] text-[var(--warn)] tracking-widest">DELOAD RECOMMANDÉE</div>
-              <div className="text-xs text-[var(--ink-dim)] mt-1">3 semaines consécutives RPE élevé. Propose un deload (-40% volume) ?</div>
+              <div className="text-xs text-[var(--ink-dim)] mt-1">3 semaines consécutives RPE élevé. -40% volume, -20% poids.</div>
             </div>
             <button onClick={() => setUseDeload(true)} className="btn btn-ghost text-[10px]">ACCEPT</button>
           </div>
+        </div>
+      )}
+      {useDeload && (
+        <div className="mt-3 card p-3 border-[var(--info)]">
+          <div className="font-mono text-[10px] text-[var(--info)] tracking-widest">🔄 DELOAD ACTIVE</div>
+          <div className="text-xs text-[var(--ink-dim)] mt-1">Volume -40%, poids -20%. <button onClick={() => setUseDeload(false)} className="underline">Annuler</button></div>
         </div>
       )}
 

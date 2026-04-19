@@ -52,6 +52,14 @@ export function deriveFocus(session: Session): string {
   return 'upper'
 }
 
+/** Average RPE across all logged exercises of a session */
+function sessionAvgRpe(session: Session | undefined): number | null {
+  if (!session) return null
+  const exs = session.loggedExercises || []
+  const rpes = exs.map(e => e.rpe).filter((r): r is number => r !== null)
+  return rpes.length ? rpes.reduce((a, b) => a + b, 0) / rpes.length : null
+}
+
 export interface ScoredSession {
   key: string
   name: string
@@ -63,11 +71,25 @@ export interface ScoredSession {
   avgFreq: number
 }
 
+/**
+ * Bug critique #2 — RPE scoring
+ *
+ * Added:
+ * - lastAvgRpe from last session's loggedExercises
+ * - If lastAvgRpe ≥ 9 AND same focus → extra -20 penalty (fatigue same group)
+ * - If lastAvgRpe ≥ 9 overall → boost rest (preferring different focus) by +10
+ * - Style alternation bonus corrected: same focus+style = -10, same focus diff style = +2, diff focus = +12
+ */
 export function pickNextSessionType(sessions: Session[], split: string): ScoredSession {
-  const completed = sessions.filter(s => s.completed).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const completed = sessions
+    .filter(s => s.completed)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
   const last = completed[0]
   const lastStyle = last?.type || null
   const lastFocus = last ? deriveFocus(last) : null
+  const lastAvgRpe = sessionAvgRpe(last)
+  const lastHighRpe = lastAvgRpe !== null && lastAvgRpe >= 9
 
   const candidates = Object.entries(SESSION_TYPES)
     .filter(([, v]) => v.split === split)
@@ -82,14 +104,22 @@ export function pickNextSessionType(sessions: Session[], split: string): ScoredS
 
     const avgFreq = groups.reduce((sum, g) => sum + (freqMap[g] || 0), 0) / Math.max(1, groups.length)
 
-    const alternationBonus = (lastFocus === c.focus && lastStyle === c.style) ? -10 : 5
-    const focusBonus = (lastFocus === c.focus) ? -5 : 10
+    // Style alternation scoring
+    const sameFocusSameStyle = lastFocus === c.focus && lastStyle === c.style
+    const sameFocusDiffStyle = lastFocus === c.focus && lastStyle !== c.style
+    const alternationBonus = sameFocusSameStyle ? -10 : sameFocusDiffStyle ? 2 : 12
+
+    // RPE fatigue penalty — if last session was brutal on same focus, back off
+    const rpeFatiguePenalty = lastHighRpe && lastFocus === c.focus ? -20 : 0
+    // If globally high RPE, reward switching focus
+    const rpeAlternationReward = lastHighRpe && lastFocus !== c.focus ? 10 : 0
 
     let score = 0
     if (!restOK) score -= 1000
     score -= avgFreq * 2
     score += alternationBonus
-    score += focusBonus
+    score += rpeFatiguePenalty
+    score += rpeAlternationReward
 
     return { ...c, score, restOK, avgFreq }
   })
