@@ -12,14 +12,51 @@ export function daysSinceLastSession(sessions: Session[]): number {
 
 export type RecoveryStatus = 'good' | 'medium' | 'poor'
 
-export function applyRecoveryAdjustment(exercises: ExerciseEntry[], recoveryStatus: RecoveryStatus): ExerciseEntry[] {
-  if (recoveryStatus === 'good') return exercises
-  const volMultiplier = recoveryStatus === 'medium' ? 0.8 : 0.7
-  return exercises.map(ex => ({
-    ...ex,
-    sets: Math.max(2, Math.round(ex.sets * volMultiplier)),
-    recoveryAdjusted: true,
-  }))
+/**
+ * Bug critique #1 — Reprise progressive
+ *
+ * Rules (cumulative — duration overrides status when stricter):
+ *   3–7 days  : honour user's recovery choice (good/medium/poor), no weight change
+ *   7–21 days : min vol ×0.8, weight suggestion ×0.85 regardless of status
+ *   >21 days  : vol ×0.6, weight suggestion ×0.60 (treat as fresh start)
+ */
+export function applyRecoveryAdjustment(
+  exercises: ExerciseEntry[],
+  recoveryStatus: RecoveryStatus,
+  daysSince = 0,
+): ExerciseEntry[] {
+  const statusVolMult = recoveryStatus === 'poor' ? 0.7 : recoveryStatus === 'medium' ? 0.8 : 1.0
+
+  // Duration-based overrides (stricter than status when applicable)
+  const durationVolMult = daysSince > 21 ? 0.6 : daysSince > 7 ? 0.8 : 1.0
+  const weightMult      = daysSince > 21 ? 0.6 : daysSince > 7 ? 0.85 : 1.0
+
+  const volMult = Math.min(statusVolMult, durationVolMult)
+
+  // No change for good recovery within a week
+  if (volMult === 1.0 && weightMult === 1.0) return exercises
+
+  const durationNote =
+    daysSince > 21
+      ? `⚠ Reprise après ${Math.round(daysSince)}j — poids -40%`
+      : daysSince > 7
+        ? `↓ Reprise après ${Math.round(daysSince)}j — poids -15%`
+        : ''
+
+  return exercises.map(ex => {
+    const newWeight =
+      ex.suggestedWeight && weightMult < 1
+        ? Math.round((ex.suggestedWeight * weightMult) / 2.5) * 2.5
+        : ex.suggestedWeight
+
+    return {
+      ...ex,
+      sets: Math.max(2, Math.round(ex.sets * volMult)),
+      suggestedWeight: newWeight,
+      progressionNote: durationNote || ex.progressionNote,
+      recoveryAdjusted: true,
+    }
+  })
 }
 
 export function applyDeloadAdjustment(exercises: ExerciseEntry[]): ExerciseEntry[] {
@@ -28,5 +65,6 @@ export function applyDeloadAdjustment(exercises: ExerciseEntry[]): ExerciseEntry
     sets: Math.max(2, Math.round(ex.sets * 0.6)),
     deloadAdjusted: true,
     suggestedWeight: ex.suggestedWeight ? Math.round(ex.suggestedWeight * 0.8 / 2.5) * 2.5 : null,
+    progressionNote: '🔄 Deload — -40% vol, -20% poids',
   }))
 }
