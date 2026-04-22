@@ -34,7 +34,7 @@ export function TodayScreen() {
     if (!settings) return null
 
     if (forcedSessionKey) {
-      return buildSessionFromType(forcedSessionKey, sessions, recovery || 'good', useDeload, forcedSplit || '')
+      return buildSessionFromType(forcedSessionKey, sessions, recovery || 'good', useDeload, forcedSplit || '', settings.machineOnly)
     }
 
     return buildNextSession(sessions, settings, {

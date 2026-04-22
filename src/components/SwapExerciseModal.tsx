@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react'
 import { EXERCISES } from '../data/exercises'
+import { useApp } from '../hooks/useApp'
 import type { ExerciseEntry, Exercise } from '../data/constants'
+
+const EQUIP_LABEL: Record<string, string> = {
+  barbell:    'BARRE',
+  dumbbell:   'DB',
+  machine:    'MACHINE',
+  cable:      'CABLE',
+  bodyweight: 'CORPS',
+}
 
 interface Props {
   currentExercise: ExerciseEntry | null
@@ -9,6 +18,9 @@ interface Props {
 }
 
 export function SwapExerciseModal({ currentExercise, onSelect, onCancel }: Props) {
+  const { settings } = useApp()
+  const machineOnly = settings?.machineOnly ?? false
+
   const [filterGroup, setFilterGroup] = useState(currentExercise?.group || 'all')
   const [search, setSearch] = useState('')
 
@@ -19,12 +31,28 @@ export function SwapExerciseModal({ currentExercise, onSelect, onCancel }: Props
   }, [])
 
   const allGroups = ['all', ...new Set(EXERCISES.map(e => e.group))]
-  const filtered = EXERCISES.filter(e => {
-    if (e.id === currentExercise?.id) return false
-    if (filterGroup !== 'all' && e.group !== filterGroup) return false
-    if (search && !e.name.toLowerCase().includes(search.toLowerCase())) return false
-    return true
-  })
+
+  const filtered = EXERCISES
+    .filter(e => {
+      if (e.id === currentExercise?.id) return false
+      if (filterGroup !== 'all' && e.group !== filterGroup) return false
+      if (search && !e.name.toLowerCase().includes(search.toLowerCase())) return false
+      return true
+    })
+    .sort((a, b) => {
+      // When machineOnly: non-barbell first, same group/tier at the very top
+      if (!machineOnly) return 0
+      const aIsBarbell = a.equipment === 'barbell'
+      const bIsBarbell = b.equipment === 'barbell'
+      if (aIsBarbell !== bIsBarbell) return aIsBarbell ? 1 : -1
+      return 0
+    })
+
+  const isSuggested = (ex: Exercise) =>
+    machineOnly &&
+    ex.equipment !== 'barbell' &&
+    ex.group === currentExercise?.group &&
+    ex.tier === currentExercise?.tier
 
   return (
     <div
@@ -43,7 +71,14 @@ export function SwapExerciseModal({ currentExercise, onSelect, onCancel }: Props
       >
         <div className="p-4 border-b border-[var(--line)]">
           <div className="flex items-center justify-between mb-2">
-            <div className="font-mono text-[10px] text-[var(--info)] tracking-widest">REMPLACER</div>
+            <div className="flex items-center gap-2">
+              <div className="font-mono text-[10px] text-[var(--info)] tracking-widest">REMPLACER</div>
+              {machineOnly && (
+                <div className="font-mono text-[9px] px-1.5 py-0.5 border border-[var(--accent)] text-[var(--accent)]">
+                  MACHINE & DB
+                </div>
+              )}
+            </div>
             <button onClick={onCancel} className="font-mono text-xs text-[var(--ink-dim)]">✕</button>
           </div>
           <div className="font-display text-lg leading-tight">{currentExercise?.name}</div>
@@ -75,23 +110,46 @@ export function SwapExerciseModal({ currentExercise, onSelect, onCancel }: Props
             <div className="text-center py-8 font-mono text-xs text-[var(--ink-dim)]">Aucun exo trouvé</div>
           )}
           <div className="space-y-1">
-            {filtered.map(ex => (
-              <button
-                key={ex.id}
-                onClick={() => onSelect(ex)}
-                className="w-full p-3 card text-left hover:border-[var(--ink-dim)] transition-colors"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-display text-sm truncate">{ex.name}</div>
-                    <div className="font-mono text-[10px] text-[var(--ink-dim)] mt-0.5">
-                      {ex.group.toUpperCase()} · {ex.tier.toUpperCase()} · {ex.role === 'compound' ? 'POLY' : 'ISO'}
+            {filtered.map(ex => {
+              const suggested = isSuggested(ex)
+              const isBarbell = ex.equipment === 'barbell'
+              return (
+                <button
+                  key={ex.id}
+                  onClick={() => onSelect(ex)}
+                  className={`w-full p-3 card text-left transition-colors ${
+                    suggested
+                      ? 'border-[var(--accent)] bg-[#0f1a00]'
+                      : 'hover:border-[var(--ink-dim)]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className={`font-display text-sm truncate ${isBarbell && machineOnly ? 'text-[var(--ink-dim)]' : ''}`}>
+                        {ex.name}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className={`font-mono text-[9px] px-1 py-px border ${
+                          ex.equipment === 'barbell'
+                            ? 'border-[var(--ink-low)] text-[var(--ink-low)]'
+                            : 'border-[var(--accent)] text-[var(--accent)]'
+                        }`}>
+                          {EQUIP_LABEL[ex.equipment]}
+                        </span>
+                        <span className="font-mono text-[10px] text-[var(--ink-dim)]">
+                          {ex.group.toUpperCase()} · {ex.tier.toUpperCase()}
+                        </span>
+                      </div>
                     </div>
+                    {suggested ? (
+                      <div className="font-mono text-[9px] text-[var(--accent)] whitespace-nowrap">★ REC.</div>
+                    ) : (
+                      <div className="font-mono text-[10px] text-[var(--ink-dim)]">→</div>
+                    )}
                   </div>
-                  <div className="font-mono text-[10px] text-[var(--accent)]">→</div>
-                </div>
-              </button>
-            ))}
+                </button>
+              )
+            })}
           </div>
         </div>
       </div>
