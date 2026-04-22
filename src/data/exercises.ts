@@ -2,12 +2,13 @@ import type { Exercise } from './constants'
 
 export const EXERCISES: Exercise[] = [
   // Chest
-  { id: 'bb_bench',    name: 'Barbell Bench Press',     group: 'Chest',      role: 'compound',  tier: 'primary',   equipment: 'barbell'    },
-  { id: 'db_bench',    name: 'Dumbbell Bench Press',    group: 'Chest',      role: 'compound',  tier: 'primary',   equipment: 'dumbbell'   },
-  { id: 'incl_db',     name: 'Incline DB Press',        group: 'Chest',      role: 'compound',  tier: 'secondary', equipment: 'dumbbell'   },
-  { id: 'dip',         name: 'Weighted Dips',           group: 'Chest',      role: 'compound',  tier: 'secondary', equipment: 'bodyweight' },
-  { id: 'cable_fly',   name: 'Cable Fly',               group: 'Chest',      role: 'isolation', tier: 'accessory', equipment: 'cable'      },
-  { id: 'pec_deck',    name: 'Pec Deck',                group: 'Chest',      role: 'isolation', tier: 'accessory', equipment: 'machine'    },
+  { id: 'bb_bench',       name: 'Barbell Bench Press',     group: 'Chest',      role: 'compound',  tier: 'primary',   equipment: 'barbell'    },
+  { id: 'chest_press_m',  name: 'Machine Chest Press',     group: 'Chest',      role: 'compound',  tier: 'secondary', equipment: 'machine'    },
+  { id: 'db_bench',       name: 'Dumbbell Bench Press',    group: 'Chest',      role: 'compound',  tier: 'secondary', equipment: 'dumbbell'   },
+  { id: 'incl_db',        name: 'Incline DB Press',        group: 'Chest',      role: 'compound',  tier: 'secondary', equipment: 'dumbbell'   },
+  { id: 'dip',            name: 'Weighted Dips',           group: 'Chest',      role: 'compound',  tier: 'secondary', equipment: 'bodyweight' },
+  { id: 'cable_fly',      name: 'Cable Fly',               group: 'Chest',      role: 'isolation', tier: 'accessory', equipment: 'cable'      },
+  { id: 'pec_deck',       name: 'Pec Deck',                group: 'Chest',      role: 'isolation', tier: 'accessory', equipment: 'machine'    },
 
   // Back
   { id: 'pullup',      name: 'Weighted Pull-up',        group: 'Back',       role: 'compound',  tier: 'primary',   equipment: 'bodyweight' },
