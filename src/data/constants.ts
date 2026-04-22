@@ -34,12 +34,15 @@ export const SPLIT_GROUPS = {
 export type SplitValue = typeof SPLITS[keyof typeof SPLITS]
 export type MuscleGroup = typeof MUSCLE_GROUPS[keyof typeof MUSCLE_GROUPS]
 
+export type Equipment = 'barbell' | 'dumbbell' | 'machine' | 'cable' | 'bodyweight'
+
 export interface Exercise {
   id: string
   name: string
   group: string
   role: 'compound' | 'isolation'
   tier: 'primary' | 'secondary' | 'accessory'
+  equipment: Equipment
 }
 
 export interface ActualSet {
@@ -50,13 +53,14 @@ export interface ActualSet {
 }
 
 export interface ExerciseEntry extends Exercise {
+  style?: 'heavy' | 'hyper'
   sets: number
   repsTarget: string
   repUnit: 'reps' | 'sec'
   restSeconds: number
   rpeTarget: number
   suggestedWeight: number | null
-  progressionNote: string
+  progressionNote?: string
   lastSession: { weight: number | null; reps: number[]; rpe: number | null } | null
   notes: string
   logged?: boolean
@@ -65,6 +69,7 @@ export interface ExerciseEntry extends Exercise {
   actualSets?: ActualSet[]
   recoveryAdjusted?: boolean
   deloadAdjusted?: boolean
+  onboardingAdjusted?: boolean
 }
 
 export interface LoggedExercise {
@@ -103,6 +108,7 @@ export interface Settings {
   weeklyTarget: number
   adaptiveDeload: boolean
   strictRest: boolean
+  machineOnly?: boolean
   createdAt: string
   excludedGroups?: string[]  // Bug modéré #3
 }

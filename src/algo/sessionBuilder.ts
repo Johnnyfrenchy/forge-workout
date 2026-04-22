@@ -3,7 +3,7 @@ import { SESSION_TYPES } from '../data/sessionTypes'
 import { pickSplit } from './frequency'
 import { pickNextSessionType } from './sessionPicker'
 import { buildExercises } from './exerciseSelector'
-import { daysSinceLastSession, applyRecoveryAdjustment, applyDeloadAdjustment } from './recovery'
+import { daysSinceLastSession, applyRecoveryAdjustment, applyDeloadAdjustment, applyOnboardingRamp } from './recovery'
 import { shouldProposeDeload } from './deload'
 import type { Session, Settings } from '../data/constants'
 
@@ -20,7 +20,7 @@ export function buildNextSession(sessions: Session[], settings: Settings, overri
 
   // Bug critique #4 — Maintenance dead-end → propose reprise séance
   if (split === SPLITS.MAINTENANCE) {
-    const repriseExs = buildExercises('full', 'hyper', sessions).slice(0, 5)
+    const repriseExs = buildExercises('full', 'hyper', sessions, [], settings.machineOnly).slice(0, 5)
     const adjusted = applyRecoveryAdjustment(repriseExs, 'medium', daysSince)
     const muscleGroups = [...new Set(adjusted.map(e => e.group))]
     return {
@@ -55,7 +55,14 @@ export function buildNextSession(sessions: Session[], settings: Settings, overri
     } as any
   }
 
-  let exercises = buildExercises(picked.focus, picked.style, sessions, settings.excludedGroups || [])
+  let exercises = buildExercises(picked.focus, picked.style, sessions, settings.excludedGroups || [], settings.machineOnly)
+
+  // ── Post-processors (ordre intentionnel) ──────────────────────────────────
+  // 1. applyOnboardingRamp  → réduit volume/RPE/reps pour les N premières séances
+  // 2. applyRecoveryAdjustment → ajuste selon fatigue accumulée
+  // 3. applyDeloadAdjustment   → semaines de décharge
+  const completedCount = sessions.filter(s => s.completed).length
+  exercises = applyOnboardingRamp(exercises, completedCount)
 
   const recovery = overrides.recovery || 'good'
 
@@ -94,10 +101,13 @@ export function buildSessionFromType(
   recovery: 'good' | 'medium' | 'poor',
   useDeload: boolean,
   baseSplit: string,
+  machineOnly = false,
 ): Session {
   const t = SESSION_TYPES[sessionKey]
   const daysSince = daysSinceLastSession(sessions)
-  let exs = buildExercises(t.focus, t.style, sessions)
+  let exs = buildExercises(t.focus, t.style, sessions, [], machineOnly)
+  const completedCount = sessions.filter(s => s.completed).length
+  exs = applyOnboardingRamp(exs, completedCount)
   if (daysSince > 3) {
     exs = applyRecoveryAdjustment(exs, recovery, daysSince)
   }

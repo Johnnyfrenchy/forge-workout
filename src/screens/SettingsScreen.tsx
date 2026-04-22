@@ -1,9 +1,16 @@
 import { useState } from 'react'
 import { useApp } from '../hooks/useApp'
+import { STORAGE_KEY } from '../data/constants'
 
 export function SettingsScreen() {
   const { settings, updateSettings, sessions, isFirebase } = useApp()
   const [showDebug, setShowDebug] = useState(false)
+  const [confirmReset, setConfirmReset] = useState(false)
+
+  const resetApp = () => {
+    localStorage.removeItem(STORAGE_KEY)
+    window.location.reload()
+  }
 
   if (!settings) return null
 
@@ -52,7 +59,7 @@ export function SettingsScreen() {
             className="accent-[var(--accent)] w-5 h-5"
           />
         </label>
-        <label className="flex items-center justify-between py-3">
+        <label className="flex items-center justify-between py-3 border-b border-[var(--line)]">
           <div className="flex-1 pr-4">
             <div className="text-sm">Repos 48h strict</div>
             <div className="font-mono text-[10px] text-[var(--ink-dim)] mt-0.5">Refuse groupes &lt;48h</div>
@@ -61,6 +68,18 @@ export function SettingsScreen() {
             type="checkbox"
             checked={settings.strictRest}
             onChange={e => updateSettings({ strictRest: e.target.checked })}
+            className="accent-[var(--accent)] w-5 h-5"
+          />
+        </label>
+        <label className="flex items-center justify-between py-3">
+          <div className="flex-1 pr-4">
+            <div className="text-sm">Machines & haltères uniquement</div>
+            <div className="font-mono text-[10px] text-[var(--ink-dim)] mt-0.5">Évite les exercices à barre libre</div>
+          </div>
+          <input
+            type="checkbox"
+            checked={settings.machineOnly ?? false}
+            onChange={e => updateSettings({ machineOnly: e.target.checked })}
             className="accent-[var(--accent)] w-5 h-5"
           />
         </label>
@@ -95,9 +114,37 @@ export function SettingsScreen() {
           <div className="mt-0.5">SESSIONS · {sessions.filter(s => s.completed).length}</div>
         </div>
         <button onClick={exportData} className="btn btn-ghost w-full mb-2 text-xs">EXPORT JSON</button>
-        <button onClick={() => setShowDebug(!showDebug)} className="btn btn-ghost w-full text-xs">
+        <button onClick={() => setShowDebug(!showDebug)} className="btn btn-ghost w-full mb-2 text-xs">
           {showDebug ? 'HIDE' : 'SHOW'} DEBUG
         </button>
+        {!confirmReset ? (
+          <button
+            onClick={() => setConfirmReset(true)}
+            className="btn btn-ghost w-full text-xs text-[var(--danger)] border-[var(--danger)]"
+          >
+            ✕ RESET APP
+          </button>
+        ) : (
+          <div className="border border-[var(--danger)] p-3 rounded">
+            <div className="font-mono text-[10px] text-[var(--danger)] mb-2 text-center">
+              Effacer toutes les données ?
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmReset(false)}
+                className="btn btn-ghost flex-1 text-xs"
+              >
+                ANNULER
+              </button>
+              <button
+                onClick={resetApp}
+                className="flex-1 p-2 border border-[var(--danger)] bg-[var(--danger)] text-black font-mono text-xs font-bold"
+              >
+                CONFIRMER
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {showDebug && (

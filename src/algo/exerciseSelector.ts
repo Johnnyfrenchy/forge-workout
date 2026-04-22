@@ -101,6 +101,8 @@ export function buildExerciseEntry(
     group: exerciseDef.group,
     role: exerciseDef.role,
     tier: exerciseDef.tier,
+    equipment: exerciseDef.equipment,
+    style,
     sets,
     repsTarget,
     repUnit,
@@ -117,13 +119,23 @@ export function buildExerciseEntry(
   }
 }
 
-export function buildExercises(focus: string, style: 'heavy' | 'hyper', sessions: Session[], excludedGroups: string[] = []): ExerciseEntry[] {
+export function buildExercises(
+  focus: string,
+  style: 'heavy' | 'hyper',
+  sessions: Session[],
+  excludedGroups: string[] = [],
+  machineOnly = false,
+): ExerciseEntry[] {
   const groups = getGroupsForFocus(focus).filter(g => !excludedGroups.includes(g))
   const mainGroups = (MAIN_GROUPS_BY_FOCUS[focus] || []).filter(g => !excludedGroups.includes(g))
   const result: ExerciseEntry[] = []
 
   for (const group of groups) {
-    const pool = EXERCISES.filter(e => e.group === group)
+    let pool = EXERCISES.filter(e => e.group === group)
+    if (machineOnly) {
+      const safe = pool.filter(e => e.equipment !== 'barbell')
+      if (safe.length > 0) pool = safe
+    }
     if (pool.length === 0) continue
 
     const byTier = (t: string) => pool.filter(e => e.tier === t)
